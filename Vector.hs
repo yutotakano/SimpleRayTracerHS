@@ -60,7 +60,7 @@ intersect (Ray origin direction) (Box (Vector x1 y1 z1) w h d) = findMin trues
       | Just q@(t, normal) <- [
           intersect (Ray origin direction) p | p <- [p1, p2, p3, p4, p5, p6]
         ], 
-        let (Vector x y z) = addV origin (multV direction t),
+        let (Vector x y z) = addV origin (multV (unitV direction) t),
         x >= x1, x <= x1 + w,
         y >= y1, y <= y1 + h,
         z >= z1, z <= z1 + d
