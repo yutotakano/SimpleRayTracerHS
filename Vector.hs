@@ -66,20 +66,17 @@ intersect (Ray origin direction) (Box (Vector x1 y1 z1) w h d) = findMin trues
         z >= z1, z <= z1 + d
       ]
     n1 = Vector 0 0 1
-    p1 = Plane n (dotV n (Vector x1 y1 z1))
-      where
-        n = multV n1 (-1)
-    p2 = Plane n1 (dotV n1 (addV (Vector x1 y1 z1) (Vector 0 0 d)))
-    n2 = Vector 0 1 0
-    p3 = Plane n (dotV n (Vector x1 y1 z1))
-      where
-        n = multV n2 (-1)
-    p4 = Plane n2 (dotV n2 (addV (Vector x1 y1 z1) (Vector 0 h 0)))
-    n3 = Vector 1 0 0
-    p5 = Plane n (dotV n (Vector x1 y1 z1))
-      where
-        n = multV n3 (-1)
-    p6 = Plane n3 (dotV n3 (addV (Vector x1 y1 z1) (Vector w 0 0)))
+    n2 = multV n1 (-1)
+    p1 = Plane n1 (dotV n1 (Vector x1 y1 z1))
+    p2 = Plane n2 (dotV n2 (addV (Vector x1 y1 z1) (Vector 0 0 d)))
+    n3 = Vector 0 1 0
+    n4 = multV n3 (-1)
+    p3 = Plane n3 (dotV n3 (Vector x1 y1 z1))
+    p4 = Plane n4 (dotV n4 (addV (Vector x1 y1 z1) (Vector 0 h 0)))
+    n5 = Vector 1 0 0
+    n6 = multV n5 (-1)
+    p5 = Plane n5 (dotV n5 (Vector x1 y1 z1))
+    p6 = Plane n6 (dotV n6 (addV (Vector x1 y1 z1) (Vector w 0 0)))
 
 findMin :: [(Double, Vector)] -> Maybe (Double, Vector) 
 findMin [] = Nothing
@@ -96,12 +93,11 @@ data Screen = Screen Double Double Double -- w, h, focal
 renderAtPixel :: (Screen, World, (Int, Int)) -> Int -> Int -> ((Screen, World, (Int, Int)), Pixel8)
 renderAtPixel state@((Screen w h focal), objects, (o_w, o_h)) j i = (state, fromIntegral $ min 0xff $ round (sum [
     if exists then brightness else 0 | sample <- [0..4],
-    let jitter = [
-      (-1.0)/4.0,  3.0/4.0,
-       3.0/4.0,  1.0/3.0,
-      (-3.0)/4.0, (-1.0)/4.0,
-       1.0/4.0, (-3.0)/4.0
-      ],
+    let jitter = [(-1.0)/4.0, 3.0/4.0
+                  , 3.0/4.0,  1.0/3.0
+                  , (-3.0)/4.0, (-1.0)/4.0
+                  , 1.0/4.0, (-3.0)/4.0
+                 ],
     let d_w = fromIntegral o_w,
     let d_h = fromIntegral o_h,
     let ray_o = Vector 0 0 (focal*(-1)),
