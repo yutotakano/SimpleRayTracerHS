@@ -4,8 +4,10 @@ import Codec.Picture
 import Vector
 import RayTracer
 
+outputSize = (512, 512)
+
 main :: IO ()
-main = writePng "/mnt/c/Users/moa17/Desktop/test.png" $ snd $ generateFoldImage renderAtPixel (Screen 100 100 25, world, (100, 100)) 100 100
+main = writePng "/mnt/c/Users/moa17/Desktop/test.png" $ snd $ uncurry (generateFoldImage renderAtPixel (Screen 100 100 25, world, outputSize)) outputSize
 
 world = [
   Box (Vector 0 (-120) 40) 100 100 100, 
