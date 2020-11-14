@@ -58,10 +58,12 @@ intersect (Ray origin direction) (Box (Vector x1 y1 z1) w h d) = findMin trues
     trues = [
       q
       | Just q@(t, normal) <- [
-        intersect (Ray origin direction) p | p <- [p1, p2, p3, p4, p5, p6]
-      ], 
+          intersect (Ray origin direction) p | p <- [p1, p2, p3, p4, p5, p6]
+        ], 
         let (Vector x y z) = addV origin (multV direction t),
-        x >= x1, x <= x1 + w, y >= y1, y <= y1 + h, z >= z1, z <= z1 + d
+        x >= x1, x <= x1 + w,
+        y >= y1, y <= y1 + h,
+        z >= z1, z <= z1 + d
       ]
     n1 = Vector 0 0 1
     p1 = Plane n (dotV n (Vector x1 y1 z1))
@@ -95,40 +97,19 @@ renderAtPixel :: (Screen, World, (Int, Int)) -> Int -> Int -> ((Screen, World, (
 renderAtPixel state@((Screen w h focal), objects, (o_w, o_h)) j i = (state, fromIntegral $ min 0xff $ round (sum [
     if exists then brightness else 0 | sample <- [0..4],
     let jitter = [
-            -1.0/4.0,  3.0/4.0,
-             3.0/4.0,  1.0/3.0,
-            -3.0/4.0, -1.0/4.0,
-             1.0/4.0, -3.0/4.0],
+      (-1.0)/4.0,  3.0/4.0,
+       3.0/4.0,  1.0/3.0,
+      (-3.0)/4.0, (-1.0)/4.0,
+       1.0/4.0, (-3.0)/4.0
+      ],
     let d_w = fromIntegral o_w,
     let d_h = fromIntegral o_h,
     let ray_o = Vector 0 0 (focal*(-1)),
     let ray_d = subV (Vector (((fromIntegral j) + (head $ drop (2*sample - 2) jitter) - (d_w/2))*(w/d_w)) (((fromIntegral i) + (head $ drop (2*sample - 1) jitter) - (d_h/2))*(h/d_h)) 0) ray_o,
     let ray = Ray ray_o ray_d,
-    let intersection = findMin [a | Just a <- [intersect ray item | item <- objects]],
+    let intersection = findMin $ [a | Just a <- [intersect ray item | item <- objects]] ++ [(300, Vector 0 0 (-1))],
     let exists = intersection /= Nothing,
     let Just t = fmap fst $ intersection,
     let Just normal = fmap snd $ intersection,
     let brightness = (80 * acos (dotV normal ray_d / (moduloV normal * moduloV ray_d))) / (t / 50)
   ] / 4))
-
-render :: Screen -> World -> (Int, Int) -> [[Double]]
-render (Screen w h focal) objects (o_w, o_h) = [[
-  sum [
-    if exists then brightness else 0 | sample <- [0..4],
-    let jitter = [
-            -1.0/4.0,  3.0/4.0,
-             3.0/4.0,  1.0/3.0,
-            -3.0/4.0, -1.0/4.0,
-             1.0/4.0, -3.0/4.0],
-    let d_w = fromIntegral o_w,
-    let d_h = fromIntegral o_h,
-    let ray_o = Vector 0 0 (focal*(-1)),
-    let ray_d = subV (Vector (((fromIntegral j) + (head $ drop (2*sample - 2) jitter) - (d_w/2))*(w/d_w)) (((fromIntegral i) + (head $ drop (2*sample - 1) jitter) - (d_h/2))*(h/d_h)) 0) ray_o,
-    let ray = Ray ray_o ray_d,
-    let intersection = findMin [a | Just a <- [intersect ray item | item <- objects]],
-    let exists = intersection /= Nothing,
-    let Just t = fmap fst $ intersection,
-    let Just normal = fmap snd $ intersection,
-    let brightness = (80 * acos (dotV normal ray_d / (moduloV normal * moduloV ray_d))) / (t / 50)
-  ] / 4| j <- [0..o_w]] | i <- [0..o_h]]
-
