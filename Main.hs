@@ -2,6 +2,7 @@ module Main where
 
 import Codec.Picture
 import Vector
+import RayTracer
 
 main :: IO ()
 main = writePng "/mnt/c/Users/moa17/Desktop/test.png" $ snd $ generateFoldImage renderAtPixel (Screen 100 100 25, world, (100, 100)) 100 100

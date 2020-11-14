@@ -19,7 +19,7 @@ extra-source-files:  CHANGELOG.md
 
 executable SimpleRayTracerHS
   main-is:             Main.hs
-  other-modules:       Vector
+  other-modules:       Vector, RayTracer
   -- other-extensions:
   build-depends:       base >=4.8 && <5, JuicyPixels >= 3.3.1
   -- hs-source-dirs:
