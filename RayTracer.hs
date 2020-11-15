@@ -82,5 +82,6 @@ renderAtPixel state@((Screen w h focal), objects, (o_w, o_h)) j i = (state, from
     let exists = intersection /= Nothing,
     let Just t = fmap fst $ intersection,
     let Just normal = fmap snd $ intersection,
-    let brightness = (80 * acos (dotV normal ray_d / (moduloV normal * moduloV ray_d))) / (t / 50)
+    let t_toscreen = sqrt (focal**2 + (((fromIntegral i) - (d_h/2))*(h/d_h))**2 + (((fromIntegral j) - (d_w/2))*(h/d_h))**2),
+    let brightness = (80 * acos (dotV normal ray_d / (moduloV normal * moduloV ray_d))) / ((t - t_toscreen) / 20)
   ] / 4))
