@@ -4,16 +4,17 @@ import Vector
 import Codec.Picture
 
 data Ray = Ray Vector Vector -- origin, direction
+data Colour = RGB Int Int Int deriving Eq
 
-data Object = Box Vector Double Double Double | -- p1, w, h, d
-              Plane Vector Double | -- n, d
-              Sphere Vector Double -- p1, radius
+data Object = Box Colour Vector Double Double Double | -- p1, w, h, d
+              Plane Colour Vector Double | -- n, d
+              Sphere Colour Vector Double -- p1, radius
 
-intersect :: Ray -> Object -> Maybe (Double, Vector) -- t, normal
+intersect :: Ray -> Object -> Maybe (Double, Vector, Colour) -- t, normal
 -- intersect (Ray origin direction) (Box p1 w h d) =
-intersect (Ray origin direction) (Sphere p1 r)
+intersect (Ray origin direction) (Sphere colour p1 r)
   | nabla < 0 = Nothing
-  | otherwise = Just (t, normal)
+  | otherwise = Just (t, normal, colour)
   where
     t = min t1 t2
     t1 = base + sqrt nabla
@@ -22,17 +23,17 @@ intersect (Ray origin direction) (Sphere p1 r)
     nabla = (dotV (unitV direction) (subV origin p1))**2 - ((moduloV (subV origin p1))**2 - r**2)
     normal = unitV $ subV (addV origin (multV (unitV direction) t)) p1
 
-intersect (Ray origin direction) (Plane normal d)
+intersect (Ray origin direction) (Plane colour normal d)
   | dotV (unitV direction) normal == 0 = Nothing
-  | otherwise                          = Just (t, normal)
+  | otherwise                          = Just (t, normal, colour)
   where
     t = ((dotV origin normal) - d) / (dotV normal $ unitV direction) * (-1)
 
-intersect (Ray origin direction) (Box (Vector x1 y1 z1) w h d) = findMin trues
+intersect (Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findMin trues
   where
     trues = [
       q
-      | Just q@(t, normal) <- [
+      | Just q@(t, normal, colour) <- [
           intersect (Ray origin direction) p | p <- [p1, p2, p3, p4, p5, p6]
         ], 
         let (Vector x y z) = addV origin (multV (unitV direction) t),
@@ -42,21 +43,21 @@ intersect (Ray origin direction) (Box (Vector x1 y1 z1) w h d) = findMin trues
       ]
     n1 = Vector 0 0 (-1)
     n2 = multV n1 (-1)
-    p1 = Plane n1 (dotV n1 (Vector x1 y1 z1))
-    p2 = Plane n2 (dotV n2 (addV (Vector x1 y1 z1) (Vector 0 0 d)))
+    p1 = Plane colour n1 (dotV n1 (Vector x1 y1 z1))
+    p2 = Plane colour n2 (dotV n2 (addV (Vector x1 y1 z1) (Vector 0 0 d)))
     n3 = Vector 0 (-1) 0
     n4 = multV n3 (-1)
-    p3 = Plane n3 (dotV n3 (Vector x1 y1 z1))
-    p4 = Plane n4 (dotV n4 (addV (Vector x1 y1 z1) (Vector 0 h 0)))
+    p3 = Plane colour n3 (dotV n3 (Vector x1 y1 z1))
+    p4 = Plane colour n4 (dotV n4 (addV (Vector x1 y1 z1) (Vector 0 h 0)))
     n5 = Vector (-1) 0 0
     n6 = multV n5 (-1)
-    p5 = Plane n5 (dotV n5 (Vector x1 y1 z1))
-    p6 = Plane n6 (dotV n6 (addV (Vector x1 y1 z1) (Vector w 0 0)))
+    p5 = Plane colour n5 (dotV n5 (Vector x1 y1 z1))
+    p6 = Plane colour n6 (dotV n6 (addV (Vector x1 y1 z1) (Vector w 0 0)))
 
-findMin :: [(Double, Vector)] -> Maybe (Double, Vector) 
+findMin :: [(Double, Vector, Colour)] -> Maybe (Double, Vector, Colour) 
 findMin [] = Nothing
-findMin (a@(t, Vector x y z):[]) = Just a
-findMin (p@(t, Vector x y z):q@(s, Vector a b c):xs)
+findMin (a@(t, Vector x y z, m):[]) = Just a
+findMin (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
   | t < s = findMin (p:xs)
   | t > s = findMin (q:xs)
   | t == s = findMin (p:xs)
@@ -65,9 +66,9 @@ type World = [Object]
 
 data Screen = Screen Double Double Double -- w, h, focal
 
-renderAtPixel :: (Screen, World, (Int, Int)) -> Int -> Int -> ((Screen, World, (Int, Int)), Pixel8)
-renderAtPixel state@((Screen w h focal), objects, (o_w, o_h)) j i = (state, fromIntegral $ min 0xff $ round (sum [
-    if exists then brightness else 0 | sample <- [0..4],
+renderAtPixel :: (Screen, World, (Int, Int)) -> Int -> Int -> ((Screen, World, (Int, Int)), PixelRGB8)
+renderAtPixel state@((Screen w h focal), objects, (o_w, o_h)) j i = (state, cumulativeToRGB $ cumulative ([
+    if exists then adjustedColour else [0,0,0] | sample <- [0..4],
     let jitter = [(-1.0)/4.0, 3.0/4.0
                   , 3.0/4.0,  1.0/3.0
                   , (-3.0)/4.0, (-1.0)/4.0
@@ -78,10 +79,37 @@ renderAtPixel state@((Screen w h focal), objects, (o_w, o_h)) j i = (state, from
     let ray_o = Vector 0 0 (focal*(-1)),
     let ray_d = subV (Vector (((fromIntegral j) + (head $ drop (2*sample - 2) jitter) - (d_w/2))*(w/d_w)) (((fromIntegral i) + (head $ drop (2*sample - 1) jitter) - (d_h/2))*(h/d_h)) 0) ray_o,
     let ray = Ray ray_o ray_d,
-    let intersection = findMin $ [a | Just a <- [intersect ray item | item <- objects]] ++ [(300, Vector 0 0 (-1))],
+    let intersection = findMin $ [a | Just a <- [intersect ray item | item <- objects]] ++ [(300, Vector 0 0 (-1), RGB 255 255 255)],
     let exists = intersection /= Nothing,
-    let Just t = fmap fst $ intersection,
-    let Just normal = fmap snd $ intersection,
+    let (Just t, Just normal, Just colour) = distributeMaybe intersection,
     let t_toscreen = sqrt (focal**2 + (((fromIntegral i) - (d_h/2))*(h/d_h))**2 + (((fromIntegral j) - (d_w/2))*(h/d_h))**2),
-    let brightness = (80 * acos (dotV normal ray_d / (moduloV normal * moduloV ray_d))) / ((t - t_toscreen) / 20)
-  ] / 4))
+    let brightness = (80 * acos (dotV normal ray_d / (moduloV normal * moduloV ray_d))) / ((t - t_toscreen) / 20),
+    let adjustedColour = colourToList $ brightenColour colour brightness
+  ]))
+
+cumulativeToRGB :: [Int] -> PixelRGB8
+cumulativeToRGB (r:g:b:[]) = PixelRGB8 r1 g1 b1
+  where
+    r1 = fromIntegral $ min 0xff $ r `div` 4
+    g1 = fromIntegral $ min 0xff $ g `div` 4
+    b1 = fromIntegral $ min 0xff $ b `div` 4
+
+cumulative :: [[Int]] -> [Int]
+cumulative [] = []
+cumulative (x:[]) = x
+cumulative ([r,g,b]:[r1,g1,b1]:[]) = [r+r1, g+g1, b+b1]
+cumulative (x:y:xs) = cumulative $ (cumulative [x,y]) : xs
+
+distributeMaybe :: Maybe (Double, Vector, Colour) -> (Maybe Double, Maybe Vector, Maybe Colour)
+distributeMaybe Nothing = (Nothing, Nothing, Nothing)
+distributeMaybe (Just (a,b,c)) = (Just a, Just b, Just c) 
+
+brightenColour :: Colour -> Double -> Colour
+brightenColour (RGB r g b) l = RGB adjustedR adjustedG adjustedB
+  where
+    adjustedR = round ((fromIntegral r)*l/255)
+    adjustedG = round ((fromIntegral g)*l/255)
+    adjustedB = round ((fromIntegral b)*l/255)
+
+colourToList :: Colour -> [Int]
+colourToList (RGB r g b) = [r,g,b]
