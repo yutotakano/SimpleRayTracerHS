@@ -15,7 +15,7 @@ maintainer:          moa17stock@gmail.com
 -- copyright:
 -- category:
 build-type:          Simple
-extra-source-files:  CHANGELOG.md
+extra-source-files:  README.md
 
 executable SimpleRayTracerHS
   main-is:             Main.hs
