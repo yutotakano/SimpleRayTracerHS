@@ -64,35 +64,52 @@ findMin (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
 
 type World = [Object]
 
-data Screen = Screen Double Double Double -- w, h, focal
+data Screen = Screen (Double, Double, Double) Vector -- (w, h, focal), pos
 
 renderAtPixel :: (Screen, World, (Int, Int)) -> Int -> Int -> ((Screen, World, (Int, Int)), PixelRGB8)
-renderAtPixel state@((Screen w h focal), objects, (o_w, o_h)) j i = (state, cumulativeToRGB $ cumulative ([
-    if exists then adjustedColour else [0,0,0] | sample <- [0..4],
-    let jitter = [(-1.0)/4.0, 3.0/4.0
-                  , 3.0/4.0,  1.0/3.0
-                  , (-3.0)/4.0, (-1.0)/4.0
-                  , 1.0/4.0, (-3.0)/4.0
-                 ],
-    let d_w = fromIntegral o_w,
-    let d_h = fromIntegral o_h,
-    let ray_o = Vector 0 0 (focal*(-1)),
-    let ray_d = subV (Vector (((fromIntegral j) + (head $ drop (2*sample - 2) jitter) - (d_w/2))*(w/d_w)) (((fromIntegral i) + (head $ drop (2*sample - 1) jitter) - (d_h/2))*(h/d_h)) 0) ray_o,
-    let ray = Ray ray_o ray_d,
-    let intersection = findMin $ [a | Just a <- [intersect ray item | item <- objects]] ++ [(300, Vector 0 0 (-1), RGB 255 255 255)],
-    let exists = intersection /= Nothing,
-    let (Just t, Just normal, Just colour) = distributeMaybe intersection,
-    let t_toscreen = sqrt (focal**2 + (((fromIntegral i) - (d_h/2))*(h/d_h))**2 + (((fromIntegral j) - (d_w/2))*(h/d_h))**2),
-    let brightness = (80 * acos (dotV normal ray_d / (moduloV normal * moduloV ray_d))) / ((t - t_toscreen) / 20),
-    let adjustedColour = colourToList $ brightenColour colour brightness
-  ]))
+renderAtPixel state@((Screen (w, h, focal) pos), objects, (o_w, o_h)) j i = (state, cumulativeToRGB $ getColour)
+  where
+    getColour :: [Int]
+    getColour 
+      | iExist    = colourToList $ brighten iColour iBrightness
+      | otherwise = [0, 0, 0]
+    
+    brighten :: Colour -> Double -> Colour
+    brighten (RGB r g b) l = RGB adjustedR adjustedG adjustedB
+      where
+        adjustedR = round ((fromIntegral r)*l/255)
+        adjustedG = round ((fromIntegral g)*l/255)
+        adjustedB = round ((fromIntegral b)*l/255)
+    
+    intersection :: Maybe (Double, Vector, Colour)
+    intersection = findMin $ [a | Just a <- [intersect (Ray iRayO iRayD) item | item <- objects]] ++ [(300, Vector 0 0 (-1), RGB 255 255 255)]
+
+    iExist :: Bool
+    iExist = intersection /= Nothing
+
+    (Just iDistance, Just iNormal, Just iColour) = distributeMaybe intersection
+
+    iBrightness :: Double    
+    iBrightness = (80 * acos (dotV iNormal iRayD / (moduloV iNormal * moduloV iRayD))) / ((iDistance - sDistance) / 20)
+      where 
+        sDistance :: Double
+        sDistance = sqrt (focal**2 + (((fromIntegral i) - (d_h/2))*(h/d_h))**2 + (((fromIntegral j) - (d_w/2))*(h/d_h))**2)
+        
+    iRayO :: Vector
+    iRayO = Vector 0 0 (focal*(-1))
+
+    iRayD :: Vector
+    iRayD = subV (Vector (((fromIntegral j) - (d_w/2))*(w/d_w)) (((fromIntegral i) - (d_h/2))*(h/d_h)) 0) iRayO
+
+    d_w = fromIntegral o_w
+    d_h = fromIntegral o_h
 
 cumulativeToRGB :: [Int] -> PixelRGB8
 cumulativeToRGB (r:g:b:[]) = PixelRGB8 r1 g1 b1
   where
-    r1 = fromIntegral $ min 0xff $ r `div` 4
-    g1 = fromIntegral $ min 0xff $ g `div` 4
-    b1 = fromIntegral $ min 0xff $ b `div` 4
+    r1 = fromIntegral $ min 0xff r
+    g1 = fromIntegral $ min 0xff g
+    b1 = fromIntegral $ min 0xff b
 
 cumulative :: [[Int]] -> [Int]
 cumulative [] = []
@@ -103,13 +120,6 @@ cumulative (x:y:xs) = cumulative $ (cumulative [x,y]) : xs
 distributeMaybe :: Maybe (Double, Vector, Colour) -> (Maybe Double, Maybe Vector, Maybe Colour)
 distributeMaybe Nothing = (Nothing, Nothing, Nothing)
 distributeMaybe (Just (a,b,c)) = (Just a, Just b, Just c) 
-
-brightenColour :: Colour -> Double -> Colour
-brightenColour (RGB r g b) l = RGB adjustedR adjustedG adjustedB
-  where
-    adjustedR = round ((fromIntegral r)*l/255)
-    adjustedG = round ((fromIntegral g)*l/255)
-    adjustedB = round ((fromIntegral b)*l/255)
 
 colourToList :: Colour -> [Int]
 colourToList (RGB r g b) = [r,g,b]
