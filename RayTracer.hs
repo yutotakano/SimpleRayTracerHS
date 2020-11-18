@@ -19,15 +19,15 @@ intersect (Ray origin direction) (Sphere colour p1 r)
     t = min t1 t2
     t1 = base + sqrt nabla
     t2 = base - sqrt nabla
-    base = (-1) * (dotV (unitV direction) (subV origin p1)) 
-    nabla = (dotV (unitV direction) (subV origin p1))**2 - ((moduloV (subV origin p1))**2 - r**2)
+    base = (-1) * ((unitV direction) • (subV origin p1)) 
+    nabla = ((unitV direction) • (subV origin p1))**2 - ((moduloV (subV origin p1))**2 - r**2)
     normal = unitV $ subV (addV origin (multV (unitV direction) t)) p1
 
 intersect (Ray origin direction) (Plane colour normal d)
-  | dotV (unitV direction) normal == 0 = Nothing
+  | (unitV direction) • normal == 0 = Nothing
   | otherwise                          = Just (t, normal, colour)
   where
-    t = ((dotV origin normal) - d) / (dotV normal $ unitV direction) * (-1)
+    t = ((origin • normal) - d) / (normal • (unitV direction)) * (-1)
 
 intersect (Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findMin trues
   where
@@ -42,17 +42,17 @@ intersect (Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findMin 
         z >= z1, z <= z1 + d
       ]
     n1 = Vector 0 0 (-1)
+    p1 = Plane colour n1 (n1 • (Vector x1 y1 z1))
     n2 = multV n1 (-1)
-    p1 = Plane colour n1 (dotV n1 (Vector x1 y1 z1))
-    p2 = Plane colour n2 (dotV n2 (Vector x1 y1 (z1+d)))
+    p2 = Plane colour n2 (n2 • (Vector x1 y1 (z1+d)))
     n3 = Vector 0 (-1) 0
+    p3 = Plane colour n3 (n3 • (Vector x1 y1 z1))
     n4 = multV n3 (-1)
-    p3 = Plane colour n3 (dotV n3 (Vector x1 y1 z1))
-    p4 = Plane colour n4 (dotV n4 (Vector x1 (y1+h) z1))
+    p4 = Plane colour n4 (n4 • (Vector x1 (y1+h) z1))
     n5 = Vector (-1) 0 0
+    p5 = Plane colour n5 (n5 • (Vector x1 y1 z1))
     n6 = multV n5 (-1)
-    p5 = Plane colour n5 (dotV n5 (Vector x1 y1 z1))
-    p6 = Plane colour n6 (dotV n6 (Vector (x1+w) y1 z1))
+    p6 = Plane colour n6 (n6 • (Vector (x1+w) y1 z1))
 
 findMin :: [(Double, Vector, Colour)] -> Maybe (Double, Vector, Colour) 
 findMin [] = Nothing
@@ -91,7 +91,7 @@ renderAtPixel state@((Screen (w, h, focal) pos), objects, (o_w, o_h)) j i = (sta
     (Just iDistance, Just iNormal, Just iColour) = distributeMaybe intersection
 
     iBrightness :: Double    
-    iBrightness = (80 * acos (dotV iNormal iRayD / (moduloV iNormal * moduloV iRayD))) / ((iDistance - sDistance) / 20)
+    iBrightness = (80 * acos (iNormal • iRayD / (moduloV iNormal * moduloV iRayD))) / ((iDistance - sDistance) / 20)
       where 
         sDistance :: Double
         sDistance = sqrt (focal**2 + (((fromIntegral i) - (d_h/2))*(h/d_h))**2 + (((fromIntegral j) - (d_w/2))*(h/d_h))**2)

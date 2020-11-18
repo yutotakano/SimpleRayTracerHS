@@ -23,5 +23,7 @@ unitV v = divV v (moduloV v)
 dotV :: Vector -> Vector -> Double
 dotV (Vector x y z) (Vector a b c) = (x * a) + (y * b) + (z * c)
 
+(•) = dotV
+
 crossV :: Vector -> Vector -> Vector
 crossV (Vector x y z) (Vector a b c) = Vector (y*c - z*b) (z*a - x*c) (x*b - y*a)
