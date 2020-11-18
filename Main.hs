@@ -22,7 +22,6 @@ white = RGB 255 255 255
 green = RGB 24 142 112
 
 world = [
-  Box white (Vector (-500) (60) 0) 1000 10 1000,
   Box white (Vector 0 50 30) 20 100 20,
   Box white (Vector 0 50 60) 20 100 20,
   Box white (Vector 100 50 30) 20 100 20,

@@ -44,15 +44,15 @@ intersect (Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findMin 
     n1 = Vector 0 0 (-1)
     n2 = multV n1 (-1)
     p1 = Plane colour n1 (dotV n1 (Vector x1 y1 z1))
-    p2 = Plane colour n2 (dotV n2 (addV (Vector x1 y1 z1) (Vector 0 0 d)))
+    p2 = Plane colour n2 (dotV n2 (Vector x1 y1 (z1+d)))
     n3 = Vector 0 (-1) 0
     n4 = multV n3 (-1)
     p3 = Plane colour n3 (dotV n3 (Vector x1 y1 z1))
-    p4 = Plane colour n4 (dotV n4 (addV (Vector x1 y1 z1) (Vector 0 h 0)))
+    p4 = Plane colour n4 (dotV n4 (Vector x1 (y1+h) z1))
     n5 = Vector (-1) 0 0
     n6 = multV n5 (-1)
     p5 = Plane colour n5 (dotV n5 (Vector x1 y1 z1))
-    p6 = Plane colour n6 (dotV n6 (addV (Vector x1 y1 z1) (Vector w 0 0)))
+    p6 = Plane colour n6 (dotV n6 (Vector (x1+w) y1 z1))
 
 findMin :: [(Double, Vector, Colour)] -> Maybe (Double, Vector, Colour) 
 findMin [] = Nothing
@@ -82,7 +82,8 @@ renderAtPixel state@((Screen (w, h, focal) pos), objects, (o_w, o_h)) j i = (sta
         adjustedB = round ((fromIntegral b)*l/255)
     
     intersection :: Maybe (Double, Vector, Colour)
-    intersection = findMin $ [a | Just a <- [intersect (Ray iRayO iRayD) item | item <- objects]] ++ [(300, Vector 0 0 (-1), RGB 255 255 255)]
+    intersection = findMin $ [a | Just a <- [intersect (Ray iRayO iRayD) item | item <- objects]]
+    --  ++ [(300, Vector 0 0 (-1), RGB 255 255 255)]
 
     iExist :: Bool
     iExist = intersection /= Nothing
