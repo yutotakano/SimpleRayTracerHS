@@ -43,16 +43,13 @@ intersect (Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findMin 
       ]
     n1 = Vector 0 0 (-1)
     p1 = Plane colour n1 (n1 • (Vector x1 y1 z1))
-    n2 = multV n1 (-1)
-    p2 = Plane colour n2 (n2 • (Vector x1 y1 (z1+d)))
+    p2 = Plane colour n2 (n1 • (Vector x1 y1 (z1+d)))
     n3 = Vector 0 (-1) 0
     p3 = Plane colour n3 (n3 • (Vector x1 y1 z1))
-    n4 = multV n3 (-1)
-    p4 = Plane colour n4 (n4 • (Vector x1 (y1+h) z1))
+    p4 = Plane colour n4 (n3 • (Vector x1 (y1+h) z1))
     n5 = Vector (-1) 0 0
     p5 = Plane colour n5 (n5 • (Vector x1 y1 z1))
-    n6 = multV n5 (-1)
-    p6 = Plane colour n6 (n6 • (Vector (x1+w) y1 z1))
+    p6 = Plane colour n6 (n5 • (Vector (x1+w) y1 z1))
 
 findMin :: [(Double, Vector, Colour)] -> Maybe (Double, Vector, Colour) 
 findMin [] = Nothing
