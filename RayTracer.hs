@@ -94,10 +94,10 @@ renderAtPixel state@((Screen (w, h, focal) pos), objects, (o_w, o_h)) j i = (sta
         sDistance = sqrt (focal**2 + (((fromIntegral i) - (d_h/2))*(h/d_h))**2 + (((fromIntegral j) - (d_w/2))*(h/d_h))**2)
         
     iRayO :: Vector
-    iRayO = Vector 0 0 (focal*(-1))
+    iRayO = addV pos (Vector 0 0 (focal*(-1)))
 
     iRayD :: Vector
-    iRayD = subV (Vector (((fromIntegral j) - (d_w/2))*(w/d_w)) (((fromIntegral i) - (d_h/2))*(h/d_h)) 0) iRayO
+    iRayD = subV (addV pos (Vector (((fromIntegral j) - (d_w/2))*(w/d_w)) (((fromIntegral i) - (d_h/2))*(h/d_h)) 0)) iRayO
 
     d_w = fromIntegral o_w
     d_h = fromIntegral o_h
