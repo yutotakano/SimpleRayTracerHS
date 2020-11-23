@@ -6,19 +6,6 @@ import RayTracer
 
 outputSize = (960, 540)
 
-main :: IO ()
--- main = writePng "/mnt/c/Users/moa17/Desktop/test.png" $ snd $ uncurry (generateFoldImage renderAtPixel (Screen 200 200 100, world, outputSize)) outputSize
-
-main = fromRight (return ()) $ writeGifAnimation "/mnt/c/Users/moa17/Desktop/test.gif" 5 LoopingForever images
-  where
-    images = [snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), world, outputSize)) outputSize | p <- [0,3..300]]
-
--- [0,3..300]
-
-fromRight :: b -> Either a b -> b
-fromRight _ (Right b) = b
-fromRight b _         = b
-
 yellow = RGB 255 215 64 
 white = RGB 255 255 255
 green = RGB 24 142 112
@@ -32,3 +19,12 @@ world = [
   Sphere green (Vector 20 10 30) 20,
   Sphere white (Vector 20 (-20) 30) 15
   ]
+
+main :: IO ()
+main = fromRight (return ()) $ writeGifAnimation "/mnt/c/Users/moa17/Desktop/test.gif" 5 LoopingForever images
+  where
+    images = [snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), world, outputSize)) outputSize | p <- [30]]
+
+fromRight :: b -> Either a b -> b
+fromRight _ (Right b) = b
+fromRight b _         = b
