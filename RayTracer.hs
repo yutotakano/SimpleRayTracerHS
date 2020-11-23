@@ -47,9 +47,9 @@ intersect r@(Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findMi
           intersect r p | p <- [p1, p2, p3, p4, p5, p6]
         ], 
         let (Vector x y z) = origin >+< (direction >*< t),
-        x - x1 >= allowedMargin, allowedMargin <= x1 + w - x,
-        y - y1 >= allowedMargin, allowedMargin <= y1 + h - y,
-        z - z1 >= allowedMargin, allowedMargin <= z1 + d - y
+        x - x1 >= (-allowedMargin), (-allowedMargin) <= x1 + w - x,
+        y - y1 >= (-allowedMargin), (-allowedMargin) <= y1 + h - y,
+        z - z1 >= (-allowedMargin), (-allowedMargin) <= z1 + d - z
       ]
     n1 = Vector 0 0 (-1)
     p1 = Plane colour n1 (Vector x1 y1 z1)
