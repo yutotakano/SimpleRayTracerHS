@@ -4,14 +4,16 @@ import Codec.Picture
 import Vector
 import RayTracer
 
-outputSize = (512, 512)
+outputSize = (960, 540)
 
 main :: IO ()
 -- main = writePng "/mnt/c/Users/moa17/Desktop/test.png" $ snd $ uncurry (generateFoldImage renderAtPixel (Screen 200 200 100, world, outputSize)) outputSize
 
-main = fromRight (return ()) $ writeGifAnimation "/mnt/c/Users/moa17/Desktop/test.gif" 100 LoopingForever images
+main = fromRight (return ()) $ writeGifAnimation "/mnt/c/Users/moa17/Desktop/test.gif" 5 LoopingForever images
   where
-    images = [snd $ uncurry (generateFoldImage renderAtPixel (Screen (200, 200, 100) (Vector 0 0 0), world, outputSize)) outputSize | p <- [1]]
+    images = [snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), world, outputSize)) outputSize | p <- [0,3..30]]
+
+-- [0,3..300]
 
 fromRight :: b -> Either a b -> b
 fromRight _ (Right b) = b
