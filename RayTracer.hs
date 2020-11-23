@@ -77,14 +77,22 @@ data Screen = Screen (Double, Double, Double) Vector -- (w, h, focal), pos
 
 type Resolution = (Int, Int)
 
+data Recursion = Rec (Int, Int) (Int, Int) (Image PixelRGB8)
+
 -- | Called by JuicyPixels for each pixel to render
 -- Scale the pixel coordinate to the according screen coordinate, 
 -- create a ray and shoot it from the origin (0, 0, focal point)
 -- get all intersections to the ray, and the colour of the intersected object
 -- and convert to RGB
-renderAtPixel :: (Screen, World, Resolution) -> Int -> Int -> ((Screen, World, Resolution), PixelRGB8)
-renderAtPixel state@((Screen (w, h, focal) pos), objects, (o_w, o_h)) j i = (state, listToRGB $ getColour)
+renderAtPixel :: (Screen, World, Resolution, Recursion) -> Int -> Int -> ((Screen, World, Resolution, Recursion), PixelRGB8)
+renderAtPixel s@((Screen (w, h, focal) pos), objects, (o_w, o_h), r@(Rec (rx, ry) (rw,rh) im)) x' y'
+  -- if within range of recursion, get pixel from recursive image
+  | and [x' >= rx, x' < rx+rw, y' >= ry, y' < ry+rh] = (s, pixelAt im (((rx + x')*o_w `div` rw)) (((ry + y')*o_h `div` rh)))
+  | otherwise = (s, listToRGB $ getColour)
   where
+    x = fromIntegral x'
+    y = fromIntegral y'
+
     getColour :: [Int]
     getColour 
       | iExist    = colourToList $ brighten iColour iBrightness
@@ -107,16 +115,16 @@ renderAtPixel state@((Screen (w, h, focal) pos), objects, (o_w, o_h)) j i = (sta
     iExist = intersection /= Nothing && iDistance > 0
 
     iBrightness :: Double    
-    iBrightness = (81 * acos (iNormal • (unitV iRayD) / (moduloV iNormal))) / (iDistance / 50)**2
+    iBrightness = (81 * acos (iNormal • (unitV iRayD) / (moduloV iNormal))) / (iDistance / 100)**2
       where
         sDistance :: Double
-        sDistance = sqrt (focal**2 + ((fromIntegral i)*h/d_h - h/2)**2 + ((fromIntegral j)*w/d_w - w/2)**2)
+        sDistance = sqrt (focal**2 + (y*h/d_h - h/2)**2 + (x*w/d_w - w/2)**2)
 
     iRayO :: Vector
     iRayO = Vector 0 0 (focal*(-1))
 
     iRayD :: Vector
-    iRayD = (Vector ((fromIntegral j)*w/d_w - w/2) ((fromIntegral i)*h/d_h - h/2) 0) >-< iRayO
+    iRayD = (Vector (x*w/d_w - w/2) (h/2 - y*h/d_h) 0) >-< iRayO
 
     d_w = fromIntegral o_w
     d_h = fromIntegral o_h
