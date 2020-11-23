@@ -16,6 +16,9 @@ data Object = Box Colour Vector Double Double Double | -- p1, w, h, d
 
 type Intersection = (Double, Vector, Colour)
 
+allowedMargin :: Double
+allowedMargin = 10**(-9)
+
 intersect :: Ray -> Object -> Maybe Intersection -- t, normal
 -- intersect (Ray origin direction) (Box p1 w h d) =
 intersect (Ray origin direction) (Sphere colour p1 r)
@@ -44,9 +47,9 @@ intersect r@(Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findMi
           intersect r p | p <- [p1, p2, p3, p4, p5, p6]
         ], 
         let (Vector x y z) = origin >+< (direction >*< t),
-        x >= x1, x <= x1 + w,
-        y >= y1, y <= y1 + h,
-        z >= z1, z <= z1 + d
+        x - x1 >= allowedMargin, allowedMargin <= x1 + w - x,
+        y - y1 >= allowedMargin, allowedMargin <= y1 + h - y,
+        z - z1 >= allowedMargin, allowedMargin <= z1 + d - y
       ]
     n1 = Vector 0 0 (-1)
     p1 = Plane colour n1 (Vector x1 y1 z1)
