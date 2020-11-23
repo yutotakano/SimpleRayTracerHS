@@ -14,7 +14,9 @@ data Object = Box Colour Vector Double Double Double | -- p1, w, h, d
               Plane Colour Vector Vector | -- n, p
               Sphere Colour Vector Double -- p1, radius
 
-intersect :: Ray -> Object -> Maybe (Double, Vector, Colour) -- t, normal
+type Intersection = (Double, Vector, Colour)
+
+intersect :: Ray -> Object -> Maybe Intersection -- t, normal
 -- intersect (Ray origin direction) (Box p1 w h d) =
 intersect (Ray origin direction) (Sphere colour p1 r)
   | nabla < 0 = Nothing
@@ -56,7 +58,7 @@ intersect r@(Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findMi
     p5 = Plane colour n5 (Vector x1 y1 z1)
     p6 = Plane colour n5 (Vector (x1+w) y1 z1)
 
-findMin :: [(Double, Vector, Colour)] -> Maybe (Double, Vector, Colour) 
+findMin :: [Intersection] -> Maybe Intersection
 findMin [] = Nothing
 findMin (a@(t, Vector x y z, m):[]) = Just a
 findMin (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
@@ -85,7 +87,7 @@ renderAtPixel state@((Screen (w, h, focal) pos), objects, (o_w, o_h)) j i = (sta
         adjustedG = round ((fromIntegral g)*l/255)
         adjustedB = round ((fromIntegral b)*l/255)
     
-    intersection :: Maybe (Double, Vector, Colour)
+    intersection :: Maybe Intersection
     intersection = findMin $ [a | Just a <- [intersect (mkRay (pos >+< iRayO) iRayD) item | item <- objects]]
     --  ++ [(300, Vector 0 0 (-1), RGB 255 255 255)]
 
@@ -116,7 +118,7 @@ cumulativeToRGB (r:g:b:[]) = PixelRGB8 r1 g1 b1
     g1 = fromIntegral $ min 0xff g
     b1 = fromIntegral $ min 0xff b
 
-distributeMaybe :: Maybe (Double, Vector, Colour) -> (Maybe Double, Maybe Vector, Maybe Colour)
+distributeMaybe :: Maybe Intersection -> (Maybe Double, Maybe Vector, Maybe Colour)
 distributeMaybe Nothing = (Nothing, Nothing, Nothing)
 distributeMaybe (Just (a,b,c)) = (Just a, Just b, Just c) 
 
