@@ -68,7 +68,9 @@ type World = [Object]
 
 data Screen = Screen (Double, Double, Double) Vector -- (w, h, focal), pos
 
-renderAtPixel :: (Screen, World, (Int, Int)) -> Int -> Int -> ((Screen, World, (Int, Int)), PixelRGB8)
+type Resolution = (Int, Int)
+
+renderAtPixel :: (Screen, World, Resolution) -> Int -> Int -> ((Screen, World, Resolution), PixelRGB8)
 renderAtPixel state@((Screen (w, h, focal) pos), objects, (o_w, o_h)) j i = (state, cumulativeToRGB $ getColour)
   where
     getColour :: [Int]
@@ -113,12 +115,6 @@ cumulativeToRGB (r:g:b:[]) = PixelRGB8 r1 g1 b1
     r1 = fromIntegral $ min 0xff r
     g1 = fromIntegral $ min 0xff g
     b1 = fromIntegral $ min 0xff b
-
-cumulative :: [[Int]] -> [Int]
-cumulative [] = []
-cumulative (x:[]) = x
-cumulative ([r,g,b]:[r1,g1,b1]:[]) = [r+r1, g+g1, b+b1]
-cumulative (x:y:xs) = cumulative $ (cumulative [x,y]) : xs
 
 distributeMaybe :: Maybe (Double, Vector, Colour) -> (Maybe Double, Maybe Vector, Maybe Colour)
 distributeMaybe Nothing = (Nothing, Nothing, Nothing)
