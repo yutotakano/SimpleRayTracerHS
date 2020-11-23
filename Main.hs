@@ -11,7 +11,7 @@ main :: IO ()
 
 main = fromRight (return ()) $ writeGifAnimation "/mnt/c/Users/moa17/Desktop/test.gif" 5 LoopingForever images
   where
-    images = [snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), world, outputSize)) outputSize | p <- [0,3..30]]
+    images = [snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), world, outputSize)) outputSize | p <- [0,3..300]]
 
 -- [0,3..300]
 
