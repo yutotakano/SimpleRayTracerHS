@@ -8,6 +8,25 @@ import Data.List (transpose)
 data Ray = Ray Vector Vector -- origin, direction
 data Colour = RGB Int Int Int deriving Eq
 
+defaultTexture :: Image PixelRGB8
+defaultTexture = generateImage defaultGen 2 2
+  where
+    defaultGen :: Int -> Int -> PixelRGB8
+    defaultGen i j
+      | (i + j) `mod` 2 == 0 = listToRGB [255, 64, 129]
+      | otherwise   = listToRGB [177, 237, 139]
+
+mkTexture :: String -> IO (Image PixelRGB8)
+mkTexture path = do
+  result <- readImage path
+  case result of
+    Left err -> do
+      putStr ("Could not load texture" ++ err)
+      return (defaultTexture)
+    Right img -> do
+      putStr "Loaded texture."
+      return (convertRGB8 img)
+
 mkRay :: Vector -> Vector -> Ray
 mkRay p v = Ray p (unitV v)
 
@@ -16,7 +35,7 @@ data Object = Box Colour Vector Double Double Double | -- p1, w, h, d
               Sphere Colour Vector Double -- p1, radius
               deriving Eq
 
-data Light = SphericalLight Colour Vector Double -- p1, radius
+data Light = SphericalLight Colour Double Vector Double -- intensity, p1, radius
 
 type Intersection = (Double, Vector, Object) -- t, normal, object
 
@@ -79,11 +98,11 @@ findClosest (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
   | t == s = findClosest (p:xs)
 
 -- | Calculate the light on a point as an RGB list of Doubles
--- Used to calculate the colour later by dividing by 255 and multiply by this
+-- Divide RGB by 255, multiply by (255/(pi/2)), multiply by angle, and divide by distance^2, scaled by intensity
 lightContribution :: Vector -> Vector -> Object -> Light -> [Double]
-lightContribution c n o (SphericalLight colour point radius)
+lightContribution c n o (SphericalLight colour intensity point radius)
   | n • v < -allowedMargin = [0, 0, 0]
-  | otherwise              = map (\x -> x / 255 * 162 * (1.57 - angleBetween) / (moduloV v / 300)**2) $ baseColour
+  | otherwise              = map (\x -> x / 255 * 162 * (1.57 - angleBetween) / (moduloV v / intensity)**2) $ baseColour
     where
       angleBetween = acos (n • v / (moduloV n * moduloV v))
       baseColour = map fromIntegral $ colourToList colour
@@ -117,10 +136,10 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h)) x' y
     --  ++ [(300, Vector 0 0 (-1), RGB 255 255 255)]
 
     (Just iDistance, Just iNormal, Just iObject) = distributeMaybe intersection
-    iCoord = iRayO >+< ((unitV iRayD) >*< iDistance)
+    iCoord = pos >+< iRayO >+< ((unitV iRayD) >*< iDistance)
 
     iExist :: Bool
-    iExist = intersection /= Nothing && iDistance > 0
+    iExist = intersection /= Nothing && if iDistance > 0 then True else traceShow (iDistance) False
 
     iColour :: [Int]
     iColour = map (round . sum) $ transpose [lightContribution iCoord iNormal iObject light | light <- lights]
