@@ -96,18 +96,13 @@ data Screen = Screen (Double, Double, Double) Vector -- (w, h, focal), pos
 
 type Resolution = (Int, Int)
 
-data Recursion = Rec (Int, Int) (Int, Int) (Image PixelRGB8)
-
 -- | Called by JuicyPixels for each pixel to render
 -- Scale the pixel coordinate to the according screen coordinate, 
 -- create a ray and shoot it from the origin (0, 0, focal point)
 -- get all intersections to the ray, and the colour of the intersected object
 -- and convert to RGB
-renderAtPixel :: (Screen, World, Resolution, Recursion) -> Int -> Int -> ((Screen, World, Resolution, Recursion), PixelRGB8)
-renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), r@(Rec (rx, ry) (rw,rh) im)) x' y'
-  -- if within range of recursion, get pixel from recursive image
-  | and [x' >= rx, x' < rx+rw, y' >= ry, y' < ry+rh] = (s, pixelAt im (((rx + x')*o_w `div` rw)) (((ry + y')*o_h `div` rh)))
-  | otherwise = (s, listToRGB $ getColour)
+renderAtPixel :: (Screen, World, Resolution) -> Int -> Int -> ((Screen, World, Resolution), PixelRGB8)
+renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h)) x' y' = (s, listToRGB $ getColour)
   where
     x = fromIntegral x'
     y = fromIntegral y'
@@ -116,13 +111,6 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), r@(R
     getColour 
       | iExist    = iColour
       | otherwise = [0, 0, 0]
-    
-    -- brighten :: Colour -> Double -> Colour
-    -- brighten (RGB r g b) l = RGB adjustedR adjustedG adjustedB
-    --   where
-    --     adjustedR = round ((fromIntegral r)*l/255)
-    --     adjustedG = round ((fromIntegral g)*l/255)
-    --     adjustedB = round ((fromIntegral b)*l/255)
     
     intersection :: Maybe Intersection
     intersection = findClosest $ [a | Just a <- [intersect (mkRay (pos >+< iRayO) iRayD) item | item <- objects]]

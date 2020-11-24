@@ -35,21 +35,10 @@ objects = [
 main :: IO ()
 main = fromRight (return ()) $ writeGifAnimation "output.gif" 5 LoopingForever images
   where
-    images = [renderImage p (960, 540) 1 | p <- [0..30]]
+    images = [renderSingle p (960, 540) | p <- [0..30]]
 
-renderSingle :: Double -> (Int, Int) -> Int -> Image PixelRGB8
-renderSingle p outputSize _ = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), (objects, lights), outputSize, smallerImage)) outputSize
-  where
-    smallerImage = Rec (0, 0) (0, 0) (renderImage p outputSize 0)
-
-renderImage :: Double -> (Int, Int) -> Int -> Image PixelRGB8
-renderImage p outputSize 0 = uncurry (generateImage renderBlank) outputSize
-renderImage p outputSize d = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), (objects, lights), outputSize, smallerImage)) outputSize
-  where
-    smallerImage = Rec (0, 0) (480, 270) (renderImage p outputSize (d-1))
-
-renderBlank :: Int -> Int -> PixelRGB8
-renderBlank i j = PixelRGB8 0 255 0
+renderSingle :: Double -> (Int, Int) -> Image PixelRGB8
+renderSingle p outputSize = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), (objects, lights), outputSize)) outputSize
 
 fromRight :: b -> Either a b -> b
 fromRight _ (Right b) = b
