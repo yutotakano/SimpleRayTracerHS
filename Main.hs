@@ -5,13 +5,16 @@ import Vector
 import Debug.Trace
 import RayTracer
 
+lamp = RGB 231 227 216
 yellow = RGB 255 215 64 
 white = RGB 255 255 255
 green = RGB 24 142 112
 
 g = -120
-world = [
-  -- SphericalLight white (Vector 0 300 0) 40
+lights = [
+  SphericalLight lamp (Vector 0 300 0) 40,
+  SphericalLight green (Vector 0 0 (-50)) 40]
+objects = [
   -- ground
   Plane white (Vector 0 1 0) (Vector 0 g 0)
   ] ++ [
@@ -32,16 +35,16 @@ world = [
 main :: IO ()
 main = fromRight (return ()) $ writeGifAnimation "output.gif" 5 LoopingForever images
   where
-    images = [renderSingle p (960, 540) 1 | p <- [0]]
+    images = [renderImage p (960, 540) 1 | p <- [0..30]]
 
 renderSingle :: Double -> (Int, Int) -> Int -> Image PixelRGB8
-renderSingle p outputSize _ = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), world, outputSize, smallerImage)) outputSize
+renderSingle p outputSize _ = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), (objects, lights), outputSize, smallerImage)) outputSize
   where
     smallerImage = Rec (0, 0) (0, 0) (renderImage p outputSize 0)
 
 renderImage :: Double -> (Int, Int) -> Int -> Image PixelRGB8
 renderImage p outputSize 0 = uncurry (generateImage renderBlank) outputSize
-renderImage p outputSize d = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), world, outputSize, smallerImage)) outputSize
+renderImage p outputSize d = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), (objects, lights), outputSize, smallerImage)) outputSize
   where
     smallerImage = Rec (0, 0) (480, 270) (renderImage p outputSize (d-1))
 

@@ -3,6 +3,7 @@ module RayTracer where
 import Vector
 import Codec.Picture
 import Debug.Trace
+import Data.List (transpose)
 
 data Ray = Ray Vector Vector -- origin, direction
 data Colour = RGB Int Int Int deriving Eq
@@ -13,8 +14,11 @@ mkRay p v = Ray p (unitV v)
 data Object = Box Colour Vector Double Double Double | -- p1, w, h, d
               Plane Colour Vector Vector | -- n, p
               Sphere Colour Vector Double -- p1, radius
+              deriving Eq
 
-type Intersection = (Double, Vector, Colour)
+data Light = SphericalLight Colour Vector Double -- p1, radius
+
+type Intersection = (Double, Vector, Object) -- t, normal, object
 
 -- | Allowed margin of error in intersection, due to floating point precision
 allowedMargin :: Double
@@ -22,9 +26,9 @@ allowedMargin = 10**(-9)
 
 -- | Main function for intersecting Rays with Objects
 intersect :: Ray -> Object -> Maybe Intersection
-intersect (Ray origin direction) (Sphere colour p1 r)
+intersect (Ray origin direction) s@(Sphere colour p1 r)
   | nabla < 0 = Nothing
-  | otherwise = Just (t, normal, colour)
+  | otherwise = Just (t, normal, s)
   where
     t = min t1 t2
     t1 = base + sqrt nabla
@@ -33,10 +37,10 @@ intersect (Ray origin direction) (Sphere colour p1 r)
     nabla = (direction • (origin >-< p1))**2 - ((moduloV (origin >-< p1))**2 - r**2)
     normal = unitV $ (origin >+< (direction >*< t)) >-< p1
 
-intersect (Ray origin direction) (Plane colour normal point)
+intersect (Ray origin direction) p@(Plane colour normal point)
   | (direction) • normal == 0  = Nothing
   | (point >-< origin) • normal == 0 = Nothing
-  | otherwise                        = Just (t, normal, colour)
+  | otherwise                        = Just (t, normal, p)
   where
     t = ((point >-< origin) • normal) / (normal • direction)
 
@@ -54,13 +58,16 @@ intersect r@(Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findCl
       ]
     n1 = Vector 0 0 (-1)
     p1 = Plane colour n1 (Vector x1 y1 z1)
-    p2 = Plane colour n1 (Vector x1 y1 (z1+d))
+    n2 = Vector 0 0 1
+    p2 = Plane colour n2 (Vector x1 y1 (z1+d))
     n3 = Vector 0 (-1) 0
     p3 = Plane colour n3 (Vector x1 y1 z1)
-    p4 = Plane colour n3 (Vector x1 (y1+h) z1)
+    n4 = Vector 0 1 0
+    p4 = Plane colour n4 (Vector x1 (y1+h) z1)
     n5 = Vector (-1) 0 0
     p5 = Plane colour n5 (Vector x1 y1 z1)
-    p6 = Plane colour n5 (Vector (x1+w) y1 z1)
+    n6 = Vector 1 0 0
+    p6 = Plane colour n6 (Vector (x1+w) y1 z1)
 
 -- | Find closest intersection based on distance
 findClosest :: [Intersection] -> Maybe Intersection
@@ -71,7 +78,19 @@ findClosest (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
   | t > s = findClosest (q:xs)
   | t == s = findClosest (p:xs)
 
-type World = [Object]
+-- | Calculate the light on a point as an RGB list of Doubles
+-- Used to calculate the colour later by dividing by 255 and multiply by this
+lightContribution :: Vector -> Vector -> Object -> Light -> [Double]
+lightContribution c n o (SphericalLight colour point radius)
+  | n • v < -allowedMargin = [0, 0, 0]
+  | otherwise              = map (\x -> x / 255 * 162 * (1.57 - angleBetween) / (moduloV v / 300)**2) $ baseColour
+    where
+      angleBetween = acos (n • v / (moduloV n * moduloV v))
+      baseColour = map fromIntegral $ colourToList colour
+      v = point >-< c
+
+
+type World = ([Object], [Light])
 
 data Screen = Screen (Double, Double, Double) Vector -- (w, h, focal), pos
 
@@ -85,7 +104,7 @@ data Recursion = Rec (Int, Int) (Int, Int) (Image PixelRGB8)
 -- get all intersections to the ray, and the colour of the intersected object
 -- and convert to RGB
 renderAtPixel :: (Screen, World, Resolution, Recursion) -> Int -> Int -> ((Screen, World, Resolution, Recursion), PixelRGB8)
-renderAtPixel s@((Screen (w, h, focal) pos), objects, (o_w, o_h), r@(Rec (rx, ry) (rw,rh) im)) x' y'
+renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), r@(Rec (rx, ry) (rw,rh) im)) x' y'
   -- if within range of recursion, get pixel from recursive image
   | and [x' >= rx, x' < rx+rw, y' >= ry, y' < ry+rh] = (s, pixelAt im (((rx + x')*o_w `div` rw)) (((ry + y')*o_h `div` rh)))
   | otherwise = (s, listToRGB $ getColour)
@@ -95,30 +114,28 @@ renderAtPixel s@((Screen (w, h, focal) pos), objects, (o_w, o_h), r@(Rec (rx, ry
 
     getColour :: [Int]
     getColour 
-      | iExist    = colourToList $ brighten iColour iBrightness
+      | iExist    = iColour
       | otherwise = [0, 0, 0]
     
-    brighten :: Colour -> Double -> Colour
-    brighten (RGB r g b) l = RGB adjustedR adjustedG adjustedB
-      where
-        adjustedR = round ((fromIntegral r)*l/255)
-        adjustedG = round ((fromIntegral g)*l/255)
-        adjustedB = round ((fromIntegral b)*l/255)
+    -- brighten :: Colour -> Double -> Colour
+    -- brighten (RGB r g b) l = RGB adjustedR adjustedG adjustedB
+    --   where
+    --     adjustedR = round ((fromIntegral r)*l/255)
+    --     adjustedG = round ((fromIntegral g)*l/255)
+    --     adjustedB = round ((fromIntegral b)*l/255)
     
     intersection :: Maybe Intersection
     intersection = findClosest $ [a | Just a <- [intersect (mkRay (pos >+< iRayO) iRayD) item | item <- objects]]
     --  ++ [(300, Vector 0 0 (-1), RGB 255 255 255)]
 
-    (Just iDistance, Just iNormal, Just iColour) = distributeMaybe intersection
+    (Just iDistance, Just iNormal, Just iObject) = distributeMaybe intersection
+    iCoord = iRayO >+< ((unitV iRayD) >*< iDistance)
 
     iExist :: Bool
     iExist = intersection /= Nothing && iDistance > 0
 
-    iBrightness :: Double    
-    iBrightness = (81 * acos (iNormal • (unitV iRayD) / (moduloV iNormal))) / (iDistance / 100)**2
-      where
-        sDistance :: Double
-        sDistance = sqrt (focal**2 + (y*h/d_h - h/2)**2 + (x*w/d_w - w/2)**2)
+    iColour :: [Int]
+    iColour = map (round . sum) $ transpose [lightContribution iCoord iNormal iObject light | light <- lights]
 
     iRayO :: Vector
     iRayO = Vector 0 0 (focal*(-1))
@@ -138,7 +155,7 @@ listToRGB (r:g:b:[]) = PixelRGB8 r1 g1 b1
     b1 = fromIntegral $ min 0xff b
 
 -- | Distribute Maybe tuple into a tuple of Maybes
-distributeMaybe :: Maybe Intersection -> (Maybe Double, Maybe Vector, Maybe Colour)
+distributeMaybe :: Maybe Intersection -> (Maybe Double, Maybe Vector, Maybe Object)
 distributeMaybe Nothing = (Nothing, Nothing, Nothing)
 distributeMaybe (Just (a,b,c)) = (Just a, Just b, Just c) 
 
