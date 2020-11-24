@@ -89,13 +89,17 @@ intersect r@(Ray origin direction) (Box colour (Vector x1 y1 z1) w h d) = findCl
     p6 = Plane colour n6 (Vector (x1+w) y1 z1)
 
 -- | Find closest intersection based on distance
+-- Gets on the positive result.
 findClosest :: [Intersection] -> Maybe Intersection
 findClosest [] = Nothing
-findClosest (a@(t, Vector x y z, m):[]) = Just a
+findClosest (a@(t, Vector x y z, m):[]) 
+  | t >= 0 = Just a
+  | t < 0 = Nothing
 findClosest (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
-  | t < s = findClosest (p:xs)
-  | t > s = findClosest (q:xs)
-  | t == s = findClosest (p:xs)
+  | t >= 0 && t < s = findClosest (p:xs)
+  | s >= 0 && s < t = findClosest (q:xs)
+  | t >= 0 && t == s = findClosest (p:xs)
+  | otherwise = findClosest (q:xs)
 
 -- | Calculate the light on a point as an RGB list of Doubles
 -- Divide RGB by 255, multiply by (255/(pi/2)), multiply by angle, and divide by distance^2, scaled by intensity
