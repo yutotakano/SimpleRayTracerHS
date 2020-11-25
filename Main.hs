@@ -34,9 +34,21 @@ main = do
         -- tabletop
         Box marble (Vector 0 (g+80) 100) 150 4 50,
         -- table drawers
-        Box marble (Vector 80 (g) (100)) 60 20 50,
-        Box marble (Vector 80 (g+20) 95) 60 30 50,
-        Box marble (Vector 80 (g+50) 100) 60 30 50
+        Box marble (Vector 90 (g) (100)) 50 20 50,
+        Box marble (Vector 111 (g+9) 97) 8 2 3,
+        Box marble (Vector 90 (g+20) 95) 50 30 50,
+        Box marble (Vector 111 (g+34) 92) 8 2 3,
+        Box marble (Vector 90 (g+50) 100) 50 30 50,
+        Box marble (Vector 111 (g+64) 97) 8 2 3,
+
+        -- desktop
+        Box yellow (Vector 15 (g+94) 130) 70 40 2,
+        --neck
+        Box yellow (Vector 48 (g+84) 132) 4 10 2,
+        --base
+        Box yellow (Vector 40 (g+84) 126) 20 2 10,
+        -- keyboard
+        Box yellow (Vector 34 (g+84) 110) 32 (0.5) 9
         ]
   -- illuminations
   let lights = [
@@ -44,14 +56,14 @@ main = do
         SphericalLight lamp 300 (Vector (-200) (g+300) 0) 40]
   
   -- render the images for the provided positions
-  let images = [renderSingle p (1920, 1080) (objects, lights) | p <- [0..5]]
+  let images = [renderSingle (Vector 0 (p / 2) p) (1920, 1080) (objects, lights) | p <- [0]]
 
   -- convert to GIF and output it
   fromRight (return ()) $ writeGifAnimation "output.gif" 5 LoopingForever images
 
 -- | Renders a single frame from the given position of the camera, output resolution, and [objects, lights]
-renderSingle :: Double -> (Int, Int) -> World -> Image PixelRGB8
-renderSingle p outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) (Vector 0 0 p), world, outputSize)) outputSize
+renderSingle :: Vector -> (Int, Int) -> World -> Image PixelRGB8
+renderSingle pos outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) pos, world, outputSize)) outputSize
 
 -- | Taken from `fromRight` in the newer versions of Prelude 
 fromRight :: b -> Either a b -> b
