@@ -1,4 +1,5 @@
-module RayTracer where
+module RayTracer (Texture(..), getTexture, Object(..), Light(..), World, Screen(..), renderAtPixel)
+where
 
 import Vector
 import Codec.Picture
@@ -6,7 +7,7 @@ import Debug.Trace
 import Data.List (transpose)
 
 data Ray = Ray Vector Vector -- origin, direction
--- data Colour = RGB Int Int Int deriving Eq
+
 data Texture = Colour PixelRGB8 |
                Img (Image PixelRGB8) deriving Eq
 
