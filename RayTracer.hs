@@ -158,6 +158,8 @@ getColourOfObjectAt (Vector ix iy iz) (Box texture (Vector x y z) w h d)
 
 getColourOfObjectAt (Vector ix iy iz) (Sphere texture p1 r) = getColourFromTextureAt 1 1 texture
 
+getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
+
 getColourFromTextureAt :: Double -> Double -> Texture -> PixelRGB8
 getColourFromTextureAt _ _ (Colour c) = c
 getColourFromTextureAt x y (Img im) = pixelAt im (coordx) (coordy)

@@ -17,24 +17,26 @@ main = do
       white = Colour (PixelRGB8 255 255 255)
       green = Colour (PixelRGB8 24 142 112)
   wood <- getTexture "wall.png"
+  marble <- getTexture "marble.jpg"
   -- list of all objects in the world
   let objects = [
         -- ground
         Plane white (Vector 0 1 0) (Vector 0 g 0),
         -- wall
-        Box wood (Vector (-400) g 150) 600 300 20,
+        Box white (Vector (-400) g 152) 600 300 20,
+        Box white (Vector (-400) g 150) 600 7 2,
 
         -- table legs
-        Box yellow (Vector 0 g 100) 10 80 10,
-        Box yellow (Vector 140 g 100) 10 80 10,
-        Box yellow (Vector 0 g 140) 10 80 10,
-        Box yellow (Vector 140 g 140) 10 80 10,
+        Box marble (Vector 0 g 100) 10 80 10,
+        Box marble (Vector 140 g 100) 10 80 10,
+        Box marble (Vector 0 g 140) 10 80 10,
+        Box marble (Vector 140 g 140) 10 80 10,
         -- tabletop
-        Box white (Vector 0 (g+80) 100) 150 4 50,
+        Box marble (Vector 0 (g+80) 100) 150 4 50,
         -- table drawers
-        Box white (Vector 80 (g) (100)) 60 20 50,
-        Box white (Vector 80 (g+20) 95) 60 30 50,
-        Box white (Vector 80 (g+50) 100) 60 30 50
+        Box marble (Vector 80 (g) (100)) 60 20 50,
+        Box marble (Vector 80 (g+20) 95) 60 30 50,
+        Box marble (Vector 80 (g+50) 100) 60 30 50
         ]
   -- illuminations
   let lights = [
