@@ -5,16 +5,16 @@ import Vector
 import Debug.Trace
 import RayTracer
 
-lamp = RGB 231 227 216
-yellow = RGB 255 215 64 
-white = RGB 255 255 255
-green = RGB 24 142 112
+lamp = PixelRGB8 231 227 216
+yellow = Colour (PixelRGB8 255 215 64)
+white = Colour (PixelRGB8 255 255 255)
+green = Colour (PixelRGB8 24 142 112)
 
 g = -120
 
 main :: IO ()
 main = do
-  wood <- mkTexture "/mnt/c/users/moa17/desktop/test.png"
+  wood <- getTexture "/mnt/c/users/moa17/desktop/test.png"
   let lights = [
         SphericalLight lamp 300 (Vector 200 (g+300) 0) 40,
         SphericalLight lamp 300 (Vector (-200) (g+300) 0) 40]
@@ -22,7 +22,7 @@ main = do
         -- ground
         Plane white (Vector 0 1 0) (Vector 0 g 0),
         -- wall
-        Box white (Vector (-400) g 150) 600 300 20
+        Box wood (Vector (-400) g 150) 600 300 20
         ] ++ [
         -- table legs
         Box yellow (Vector 0 g 100) 10 80 10,
