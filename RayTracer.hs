@@ -24,7 +24,7 @@ getTexture path = do
   result <- readImage path
   case result of
     Left err -> do
-      putStrLn ("Could not load texture" ++ err)
+      putStrLn ("Could not load texture \"" ++ err ++ "\"")
       return (Img defaultTexture)
     Right img -> do
       putStrLn "Loaded texture."
