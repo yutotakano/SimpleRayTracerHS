@@ -27,7 +27,7 @@ getTexture path = do
       putStrLn ("Could not load texture \"" ++ err ++ "\"")
       return (Img defaultTexture)
     Right img -> do
-      putStrLn "Loaded texture."
+      putStrLn ("Loaded texture: " ++ path)
       return (Img $ convertRGB8 img)
 
 mkRay :: Vector -> Vector -> Ray
