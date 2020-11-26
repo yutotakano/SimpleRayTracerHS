@@ -24,10 +24,10 @@ getTexture path = do
   result <- readImage path
   case result of
     Left err -> do
-      putStr ("Could not load texture" ++ err)
+      putStrLn ("Could not load texture" ++ err)
       return (Img defaultTexture)
     Right img -> do
-      putStr "Loaded texture."
+      putStrLn "Loaded texture."
       return (Img $ convertRGB8 img)
 
 mkRay :: Vector -> Vector -> Ray
@@ -116,6 +116,20 @@ lightContribution c n o (SphericalLight colour intensity point radius)
       baseColour = map (fromIntegral) $ rgb8ToList $ getColourOfObjectAt c o
       v = point >-< c
 
+-- | Throw rays towards light source, find shadows as 0-255 where 255 is darkest
+-- The reason it's inverted is because it is going to be subtracted from lightContribution
+shadowContribution :: Vector -> Vector -> Object -> Light -> [Object] -> [Double]
+shadowContribution c n o (SphericalLight colour intensity point radius) objects = getShadow
+  where
+    getShadow :: [Double]
+    getShadow 
+      | (point >-< c) • n < 0 = [0,0,0]
+      | intersection = [10, 10, 10] 
+      | otherwise = [0, 0, 0]
+    
+    intersection :: Bool
+    intersection = 0 < length [a | Just a <- [intersect (mkRay c (point >-< c)) item | item <- objects, item /= o]]
+
 
 -- | box labelling for the looong function below
 --    +--------------+          +--------------+
@@ -177,13 +191,15 @@ data Screen = Screen (Double, Double, Double) Vector -- (w, h, focal), pos
 
 type Resolution = (Int, Int)
 
+type Shadow = Bool
+
 -- | Called by JuicyPixels for each pixel to render
 -- Scale the pixel coordinate to the according screen coordinate, 
 -- create a ray and shoot it from the origin (0, 0, focal point)
 -- get all intersections to the ray, and the colour of the intersected object
 -- and convert to RGB
-renderAtPixel :: (Screen, World, Resolution) -> Int -> Int -> ((Screen, World, Resolution), PixelRGB8)
-renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h)) x' y' = (s, listToRGB8 $ getColour)
+renderAtPixel :: (Screen, World, Resolution, Shadow) -> Int -> Int -> ((Screen, World, Resolution, Shadow), PixelRGB8)
+renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shadow) x' y' = (s, listToRGB8 $ getColour)
   where
     x = fromIntegral x'
     y = fromIntegral y'
@@ -195,7 +211,6 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h)) x' y
     
     intersection :: Maybe Intersection
     intersection = findClosest $ [a | Just a <- [intersect (mkRay (pos >+< iRayO) iRayD) item | item <- objects]]
-    --  ++ [(300, Vector 0 0 (-1), RGB 255 255 255)]
 
     (Just iDistance, Just iNormal, Just iObject) = distributeMaybe intersection
     iCoord = pos >+< iRayO >+< ((unitV iRayD) >*< iDistance)
@@ -204,7 +219,10 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h)) x' y
     iExist = intersection /= Nothing && if iDistance > 0 then True else traceShow (iDistance) False
 
     iColour :: [Int]
-    iColour = map (round . sum) $ transpose [lightContribution iCoord iNormal iObject light | light <- lights]
+    iColour = map (round . sum) $ transpose [
+      if not shadow then (lightContribution iCoord iNormal iObject light) else map (max 0) $ zipWith (-) (lightContribution iCoord iNormal iObject light) (shadowContribution iCoord iNormal iObject light objects)
+      | light <- lights
+      ]
 
     iRayO :: Vector
     iRayO = Vector 0 0 (focal*(-1))
