@@ -16,15 +16,15 @@ main = do
   let yellow = Colour (PixelRGB8 255 215 64)
       white = Colour (PixelRGB8 255 255 255)
       green = Colour (PixelRGB8 24 142 112)
-  wood <- getTexture "wall.png"
+  brick <- getTexture "brick.jpg"
   marble <- getTexture "marble.jpg"
   -- list of all objects in the world
   let objects = [
         -- ground
         Plane white (Vector 0 1 0) (Vector 0 g 0),
         -- wall
-        Box white (Vector (-400) g 152) 600 300 20,
-        Box white (Vector (-400) g 150) 600 7 2,
+        Box brick (Vector (-300) g 152) 600 300 20,
+        Box white (Vector (-300) g 150) 600 7 2,
 
         -- table legs
         Box marble (Vector 0 g 100) 10 80 10,
@@ -51,19 +51,22 @@ main = do
         Box yellow (Vector 34 (g+84) 110) 32 (0.5) 9,
 
         -- face
-        Sphere wood (Vector (-30) (g+130) 20) 20
+        Ellipsoid white (Vector (-30) (g+130) 20) 20 20 20,
+        -- body
+        Ellipsoid marble (Vector (-30) (g+70) 20) 30 60 15
         ]
   -- illuminations
   let lights = [
         SphericalLight lamp 300 (Vector 200 (g+300) 0) 40,
-        SphericalLight lamp 300 (Vector (-200) (g+300) 0) 40]
+        SphericalLight lamp 300 (Vector (-200) (g+300) 0) 40,
+        SphericalLight lamp 50 (Vector 0 0 (-60)) 30]
   
   -- render the images for the provided positions
   -- camera needs to go from 0,0,0 to 50,-6,100
   -- so, interpolate from 0..150 and divide each value accordingly
   let images = [
-        renderSingle (Vector x y z) (960, 540) (objects, lights)
-        | i <- [0],
+        renderSingle (Vector x y z) (1920, 1080) (objects, lights)
+        | i <- [0..150],
           let j = (fromIntegral i),
           let x = j/3,
           let y = j/(-25),

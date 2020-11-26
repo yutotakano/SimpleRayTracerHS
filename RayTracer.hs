@@ -35,7 +35,7 @@ mkRay p v = Ray p (unitV v)
 
 data Object = Box Texture Vector Double Double Double | -- p1, w, h, d
               Plane Texture Vector Vector | -- n, p
-              Sphere Texture Vector Double -- p1, radius
+              Ellipsoid Texture Vector Double Double Double -- p1, radiusx, radiusy, radiusz
               deriving Eq
 
 data Light = SphericalLight PixelRGB8 Double Vector Double -- intensity, p1, radius
@@ -48,16 +48,21 @@ allowedMargin = 10**(-9)
 
 -- | Main function for intersecting Rays with Objects
 intersect :: Ray -> Object -> Maybe Intersection
-intersect (Ray origin direction) s@(Sphere texture p1 r)
+intersect (Ray origin direction) s@(Ellipsoid texture c rx ry rz)
   | nabla < 0 = Nothing
   | otherwise = Just (t, normal, s)
-  where
-    t = min t1 t2
-    t1 = base + sqrt nabla
-    t2 = base - sqrt nabla
-    base = (-1) * (direction • (origin >-< p1)) 
-    nabla = (direction • (origin >-< p1))**2 - ((moduloV (origin >-< p1))**2 - r**2)
-    normal = unitV $ (origin >+< (direction >*< t)) >-< p1
+    where
+      -- rearranged from https://cs.oberlin.edu/~bob/cs357.08/VectorGeometry/VectorGeometry.pdf
+      timesm :: Vector -> Vector
+      timesm (Vector x y z) = Vector (x/rx) (y/ry) (z/rz)
+      v1 = (timesm direction)
+      p1 = (timesm origin) >-< (timesm c)
+      t = min t1 t2
+      t1 = (base + sqrt nabla) / (v1 • v1)
+      t2 = (base - sqrt nabla) / (v1 • v1)
+      base = - (p1 • v1)
+      nabla = ((p1 • v1)**2 - (p1 • p1 - 1)*(v1 • v1))
+      normal = unitV $ (origin >+< (direction >*< t)) >-< c
 
 intersect (Ray origin direction) p@(Plane texture normal point)
   | (direction) • normal == 0  = Nothing
@@ -170,7 +175,7 @@ getColourOfObjectAt (Vector ix iy iz) (Box texture (Vector x y z) w h d)
     traceShow "B"
     getColourFromTextureAt ((x - ix) / w) ((y + h - iy) / h) texture
 
-getColourOfObjectAt (Vector ix iy iz) (Sphere texture p1 r) = getColourFromTextureAt 1 1 texture
+getColourOfObjectAt (Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getColourFromTextureAt 1 1 texture
 
 getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
 
