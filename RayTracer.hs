@@ -48,11 +48,12 @@ allowedMargin = 10**(-9)
 
 -- | Main function for intersecting Rays with Objects
 intersect :: Ray -> Object -> Maybe Intersection
+-- Intersect with Ellipsoid.
+-- Adapted using math from https://cs.oberlin.edu/~bob/cs357.08/VectorGeometry/VectorGeometry.pdf 
 intersect (Ray origin direction) s@(Ellipsoid texture c rx ry rz)
   | nabla < 0 = Nothing
   | otherwise = Just (t, normal, s)
     where
-      -- rearranged from https://cs.oberlin.edu/~bob/cs357.08/VectorGeometry/VectorGeometry.pdf
       timesm :: Vector -> Vector
       timesm (Vector x y z) = Vector (x/rx) (y/ry) (z/rz)
       v1 = (timesm direction)
@@ -64,6 +65,7 @@ intersect (Ray origin direction) s@(Ellipsoid texture c rx ry rz)
       nabla = ((p1 • v1)**2 - (p1 • p1 - 1)*(v1 • v1))
       normal = unitV $ (origin >+< (direction >*< t)) >-< c
 
+-- Intersect with Plane. Just solve equation.
 intersect (Ray origin direction) p@(Plane texture normal point)
   | (direction) • normal == 0  = Nothing
   | (point >-< origin) • normal == 0 = Nothing
@@ -71,6 +73,8 @@ intersect (Ray origin direction) p@(Plane texture normal point)
   where
     t = ((point >-< origin) • normal) / (normal • direction)
 
+-- Intersect with Box. 
+-- Intersect with all 6 planes, check if within box dimensions, get closest.
 intersect r@(Ray origin direction) b@(Box texture (Vector x1 y1 z1) w h d) = findClosest trues
   where
     trues = [
@@ -149,6 +153,7 @@ shadowContribution c n o (SphericalLight colour intensity point radius) objects 
 -- *--------------*          *--------------*
 
 getColourOfObjectAt :: Vector -> Object -> PixelRGB8
+-- UV Mapping for box
 getColourOfObjectAt (Vector ix iy iz) (Box texture (Vector x y z) w h d)
   | abs (ix - x) < allowedMargin = 
     -- lies on C
@@ -168,8 +173,13 @@ getColourOfObjectAt (Vector ix iy iz) (Box texture (Vector x y z) w h d)
   | abs (iz - z - d) < allowedMargin =
     -- lies on B
     getColourFromTextureAt ((x - ix) / w) ((y + h - iy) / h) texture
-
-getColourOfObjectAt (Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getColourFromTextureAt 1 1 texture
+-- UV Mapping for ellipsoid.
+-- https://gamedev.stackexchange.com/questions/114412/how-to-get-uv-coordinates-for-sphere-cylindrical-projection/114416
+getColourOfObjectAt vec@(Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getColourFromTextureAt u v texture
+  where
+    (Vector nx ny nz) = unitV (vec >-< p1)
+    u = (atan2 nx nz) / (2*3.14) + 0.5
+    v = ny * 0.5 + 0.5
 
 getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
 
