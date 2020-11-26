@@ -225,7 +225,7 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shad
     iCoord = pos >+< iRayO >+< ((unitV iRayD) >*< iDistance)
 
     iExist :: Bool
-    iExist = intersection /= Nothing && if iDistance > 0 then True else traceShow (iDistance) False
+    iExist = intersection /= Nothing && iDistance > 0
 
     iColour :: [Int]
     iColour = map (round . sum) $ transpose [
