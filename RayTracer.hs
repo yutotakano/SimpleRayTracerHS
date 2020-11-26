@@ -101,18 +101,19 @@ intersect r@(Ray origin direction) b@(Box texture (Vector x1 y1 z1) w h d) = fin
     p6 = Plane texture n6 (Vector (x1+w) y1 z1)
 
 -- | Find closest intersection based on distance
--- Gets on the positive result.
+-- Gets only the positive result.
 findClosest :: [Intersection] -> Maybe Intersection
 findClosest [] = Nothing
 findClosest (a@(t, Vector x y z, m):[]) 
   | t >= 0 = Just a
   | t < 0 = Nothing
-findClosest (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
+findClosest l@(p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
+  | t < 0 && s < 0 = findClosest xs
   | t < 0 = findClosest (q:xs)
+  | s < 0 = findClosest (p:xs)
   | t < s = findClosest (p:xs)
-  | t > s = findClosest (q:xs)
+  | s < t = findClosest (q:xs)
   | t == s = findClosest (p:xs)
-
 
 -- | Calculate the light on a point as an list of doubles
 -- Divide RGB by 255, multiply by (255/(pi/2)), multiply by angle, and divide by distance^2, scaled by intensity
@@ -220,7 +221,7 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shad
       | otherwise = [0, 0, 0]
     
     intersection :: Maybe Intersection
-    intersection = findClosest $ [a | Just a <- [intersect (mkRay (pos >+< iRayO) iRayD) item | item <- objects]]
+    intersection = findClosest [a | Just a <- [intersect (mkRay (pos >+< iRayO) iRayD) item | item <- objects]]
 
     (Just iDistance, Just iNormal, Just iObject) = distributeMaybe intersection
     iCoord = pos >+< iRayO >+< ((unitV iRayD) >*< iDistance)
