@@ -152,27 +152,21 @@ getColourOfObjectAt :: Vector -> Object -> PixelRGB8
 getColourOfObjectAt (Vector ix iy iz) (Box texture (Vector x y z) w h d)
   | abs (ix - x) < allowedMargin = 
     -- lies on C
-    traceShow "C"
     getColourFromTextureAt ((z + d - iz) / d) ((y + h - iy) / h) texture
   | abs (ix - x - w) < allowedMargin =
     -- lies on D
-    traceShow "D"
     getColourFromTextureAt ((iz - z) / d) ((y + h - iy) / h) texture
   | abs (iy - y) < allowedMargin =
     -- lies on F
-    traceShow "F"
     getColourFromTextureAt ((x + w - ix) / w) ((iz - z) / d) texture
   | abs (iy - y - h) < allowedMargin =
     -- lies on E
-    traceShow "E"
     getColourFromTextureAt ((ix - x) / w) ((z + d - iz) / d) texture
   | abs (iz - z) < allowedMargin =
     -- lies on A
-    traceShow "A"
     getColourFromTextureAt ((ix - x) / w) ((y + h - iy) / h) texture
   | abs (iz - z - d) < allowedMargin =
     -- lies on B
-    traceShow "B"
     getColourFromTextureAt ((x - ix) / w) ((y + h - iy) / h) texture
 
 getColourOfObjectAt (Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getColourFromTextureAt 1 1 texture
