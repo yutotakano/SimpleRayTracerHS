@@ -48,7 +48,10 @@ main = do
         --base
         Box yellow (Vector 40 (g+84) 126) 20 2 10,
         -- keyboard
-        Box yellow (Vector 34 (g+84) 110) 32 (0.5) 9
+        Box yellow (Vector 34 (g+84) 110) 32 (0.5) 9,
+
+        -- face
+        Sphere wood (Vector (-30) (g+130) 20) 20
         ]
   -- illuminations
   let lights = [
