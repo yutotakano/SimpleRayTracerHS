@@ -56,14 +56,22 @@ main = do
         SphericalLight lamp 300 (Vector (-200) (g+300) 0) 40]
   
   -- render the images for the provided positions
-  let images = [renderSingle (Vector 0 (p / 2) p) (1920, 1080) (objects, lights) | p <- [0]]
+  -- camera needs to go from 0,0,0 to 50,-6,100
+  -- so, interpolate from 0..150 and divide each value accordingly
+  let images = [
+        renderSingle (Vector x y z) (960, 540) (objects, lights)
+        | i <- [0],
+          let j = (fromIntegral i),
+          let x = j/3,
+          let y = j/(-25),
+          let z = j/(1.5)]
 
   -- convert to GIF and output it
   fromRight (return ()) $ writeGifAnimation "output.gif" 5 LoopingForever images
 
 -- | Renders a single frame from the given position of the camera, output resolution, and [objects, lights]
 renderSingle :: Vector -> (Int, Int) -> World -> Image PixelRGB8
-renderSingle pos outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) pos, world, outputSize)) outputSize
+renderSingle pos outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (160, 90, 100) pos, world, outputSize, False)) outputSize
 
 -- | Taken from `fromRight` in the newer versions of Prelude 
 fromRight :: b -> Either a b -> b
