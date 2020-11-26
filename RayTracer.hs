@@ -108,10 +108,10 @@ findClosest (a@(t, Vector x y z, m):[])
   | t >= 0 = Just a
   | t < 0 = Nothing
 findClosest (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
-  | t >= 0 && t < s = findClosest (p:xs)
-  | s >= 0 && s < t = findClosest (q:xs)
-  | t >= 0 && t == s = findClosest (p:xs)
-  | otherwise = findClosest (q:xs)
+  | t < 0 = findClosest (q:xs)
+  | t < s = findClosest (p:xs)
+  | t > s = findClosest (q:xs)
+  | t == s = findClosest (p:xs)
 
 
 -- | Calculate the light on a point as an list of doubles
@@ -173,12 +173,13 @@ getColourOfObjectAt (Vector ix iy iz) (Box texture (Vector x y z) w h d)
   | abs (iz - z - d) < allowedMargin =
     -- lies on B
     getColourFromTextureAt ((x - ix) / w) ((y + h - iy) / h) texture
--- UV Mapping for ellipsoid.
+-- UV Mapping for ellipsoid. Requires a 3.14x1 image
+-- Adapted and modified from:
 -- https://gamedev.stackexchange.com/questions/114412/how-to-get-uv-coordinates-for-sphere-cylindrical-projection/114416
 getColourOfObjectAt vec@(Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getColourFromTextureAt u v texture
   where
     (Vector nx ny nz) = unitV (vec >-< p1)
-    u = (atan2 nx nz) / (2*3.14) + 0.5
+    u = ((atan2 nx (-nz) / (2*3.15) + 0.5) - 0.04) `mod'` 1
     v = 1 - ny * 0.5 - 0.5
 
 getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
@@ -225,7 +226,7 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shad
     iCoord = pos >+< iRayO >+< ((unitV iRayD) >*< iDistance)
 
     iExist :: Bool
-    iExist = intersection /= Nothing && iDistance > 0
+    iExist = intersection /= Nothing 
 
     iColour :: [Int]
     iColour = map (round . sum) $ transpose [
@@ -262,3 +263,14 @@ distributeMaybe (Just (a,b,c)) = (Just a, Just b, Just c)
 -- | Convert custom Color tuple to list of three Ints
 colourToList :: Texture -> [Int]
 colourToList (Colour (PixelRGB8 r g b)) = map (round . fromIntegral) [r,g,b]
+
+-- | Generalisation of 'div' to any instance of 'Real'
+-- Taken from Data.Fixed
+div' :: (Real a,Integral b) => a -> a -> b
+div' n d = floor ((toRational n) / (toRational d))
+
+-- | Generalisation of 'mod' to any instance of 'Real'
+-- Taken from Data.Fixed
+mod' :: (Real a) => a -> a -> a
+mod' n d = n - (fromInteger f) * d where
+    f = div' n d
