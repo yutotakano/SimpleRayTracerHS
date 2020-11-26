@@ -179,7 +179,7 @@ getColourOfObjectAt vec@(Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getC
   where
     (Vector nx ny nz) = unitV (vec >-< p1)
     u = (atan2 nx nz) / (2*3.14) + 0.5
-    v = ny * 0.5 + 0.5
+    v = 1 - ny * 0.5 - 0.5
 
 getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
 
