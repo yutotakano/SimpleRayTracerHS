@@ -120,7 +120,7 @@ findClosest l@(p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
 lightContribution :: Vector -> Vector -> Object -> Light -> [Double]
 lightContribution c n o (SphericalLight colour intensity point radius)
   | n • v < -allowedMargin = [0, 0, 0]
-  | otherwise              = map (\x -> x / 255 * 162 * (1.57 - angleBetween) / (moduloV v / intensity)**2) baseColour
+  | otherwise              = map (\x -> x / 255 * 162 * (1.57 - angleBetween) * (intensity / 100) / (moduloV v / 200)**2) baseColour
     where
       angleBetween = acos (n • v / (moduloV n * moduloV v))
       baseColour = map (fromIntegral) $ rgb8ToList $ getColourOfObjectAt c o
