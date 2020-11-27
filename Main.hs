@@ -90,10 +90,10 @@ main = do
   -- camera needs to go from 0,0,0 to 60,10,100 (center is 50, -6, 320)
   -- so, interpolate from 0..150 and divide each value accordingly
   let images = [
-        renderSingle (Vector x y z) (192, 108) (objects, lights)
-        | i <- [0,10..150],
+        renderSingle (Vector x y z) (1920, 1080) (objects, lights)
+        | i <- [0..150],
           let j = (fromIntegral i),
-          let x = j/2.09,
+          let x = j/1.6345,
           let y = j/(44), -- so much manual tweaking was done with these three values... ;( time gone
           let z = j/(0.656)]
 
