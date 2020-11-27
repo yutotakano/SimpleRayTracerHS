@@ -133,12 +133,28 @@ shadowContribution c n o (SphericalLight colour intensity point radius) objects 
   where
     getShadow :: [Double]
     getShadow 
-      | (point >-< c) • n < 0 = [0,0,0]
-      | intersection = [10, 10, 10] 
+      | v • n < 0 = [0,0,0]
+      | doesIntersect = map (\x -> (n • v) / (moduloV n * moduloV v) * x * intensity/ (4 * pi * (v • v / 10000))) [255, 255, 255] 
       | otherwise = [0, 0, 0]
+      where
     
-    intersection :: Bool
-    intersection = 0 < length [a | Just a <- [intersect (mkRay c (point >-< c)) item | item <- objects, item /= o]]
+    v :: Vector
+    v = point >-< c
+    
+    doesIntersect :: Bool
+    doesIntersect = checkObjects (mkRay c v) objects
+    
+    checkObjects :: Ray -> [Object] -> Bool
+    checkObjects r [] = False
+    checkObjects r (x:xs)
+      | x == o = checkObjects r xs
+      | a == Nothing = checkObjects r xs
+      | t > (moduloV v) = checkObjects r xs
+      | t <= 0 = checkObjects r xs
+      | otherwise = True
+        where
+          a = intersect r x
+          (Just t, Just normal, Just p) = distributeMaybe a
 
 
 -- | box labelling for the looong function below
