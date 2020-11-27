@@ -1,8 +1,8 @@
 # SimpleRayTracerHS
 
-This is a port of [SimpleRayTracer](https://github.com/yutotakano/SimpleRayTracer) (Python), written in Haskell. Still looks cool!
+This is RayTracer built in Haskell, for the Functional Programming competition at University of Edinburgh. It's not simple, contrary to the name.
 
-![Image](https://i.imgur.com/VhR3VEC.png)
+Details are a secret until the competition is over.
 
 ## Libraries
 
