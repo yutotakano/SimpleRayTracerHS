@@ -12,22 +12,25 @@ main :: IO ()
 main = do
   -- lights can only have a colour
   let lamp = PixelRGB8 231 227 216
-  let bluelight = PixelRGB8 236 243 255
+      bluelight = PixelRGB8 236 243 255
+      sun = PixelRGB8 246 209 0
   -- material can be both colour and texture (loaded with getTexture)
-  let yellow = Colour (PixelRGB8 255 215 64)
-      white = Colour (PixelRGB8 255 255 255)
+  let white = Colour (PixelRGB8 255 255 255)
       orange = Colour (PixelRGB8 238 162 57)
       silver = Colour (PixelRGB8 197 197 197)
       darksilver = Colour (PixelRGB8 124 124 124)
-  brick <- getTexture "textures/brick.png"
   edinburgh <- getTexture "textures/edinburgh.jpg"
+  wood <- getTexture "textures/wood.jpg"
   face <- getTexture "textures/face.png"
   zoom <- getTexture "textures/zoom.png"
   marble <- getTexture "textures/marble.jpg"
   -- list of all objects in the world
   let objects = [
         -- ground
-        Plane white (Vector 0 1 0) (Vector 0 g 0),
+        Box wood (Vector (-300) (g-10) 0) 600 10 262,
+        -- ceiling
+        Box white (Vector (-300) (g+300) 0) 600 10 262,
+
         -- wall
         Box orange (Vector (-300) g 252) 600 116 10,
         Box orange (Vector (-300) (g+270) 252) 600 30 10,
@@ -80,29 +83,32 @@ main = do
         ]
   -- illuminations
   let lights = [
-        SphericalLight lamp 80 (Vector 200 (g+300) 200) 40,
-        SphericalLight lamp 100 (Vector (-200) (g+300) 200) 40,
-        SphericalLight lamp 100 (Vector 200 (g+300) 0) 40,
-        SphericalLight lamp 80 (Vector (-200) (g+300) 0) 40,
-        SphericalLight lamp 10 (Vector 0 0 (-60)) 30]
+        SphericalLight sun 500 (Vector 0 500 0) 0,
+        SphericalLight lamp 80 (Vector 200 (g+290) 200) 40,
+        SphericalLight lamp 80 (Vector (-200) (g+290) 200) 40,
+        SphericalLight lamp 80 (Vector 200 (g+290) 0) 40,
+        SphericalLight lamp 80 (Vector (-200) (g+290) 0) 40,
+        SphericalLight bluelight 10 (Vector 0 0 (-60)) 30
+      --   SphericalLight bluelight 10 (Vector 70 (g+94+20) 228.6) 30
+        ]
   
   -- render the images for the provided positions
   -- camera needs to go from 0,0,0 to 60,10,100 (center is 50, -6, 320)
   -- so, interpolate from 0..150 and divide each value accordingly
   let images = [
-        renderSingle (Vector x y z) (1920, 1080) (objects, lights)
+        renderSingle (Vector x y z) (192, 108) (objects, lights)
         | i <- [0..150],
           let j = (fromIntegral i),
           let x = j/1.6345,
           let y = j/(44), -- so much manual tweaking was done with these three values... ;( time gone
-          let z = j/(0.656)]
+          let z = 10 + j/(150/(228.658 - 10))]
 
   -- convert to GIF and output it
   fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
 
 -- | Renders a single frame from the given position of the camera, output resolution, and [objects, lights]
 renderSingle :: Vector -> (Int, Int) -> World -> Image PixelRGB8
-renderSingle pos outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (1.7777, 1, 1) pos, world, outputSize, False)) outputSize
+renderSingle pos outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (1.7777, 1, 1) pos, world, outputSize, True)) outputSize
 
 -- | Taken from `fromRight` in the newer versions of Prelude 
 fromRight :: b -> Either a b -> b
