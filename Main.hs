@@ -19,6 +19,7 @@ main = do
       orange = Colour (PixelRGB8 238 162 57)
       silver = Colour (PixelRGB8 197 197 197)
       darksilver = Colour (PixelRGB8 124 124 124)
+      blue = Colour (PixelRGB8 136 175 238)
   edinburgh <- getTexture "textures/edinburgh.jpg"
   wood <- getTexture "textures/wood.jpg"
   face <- getTexture "textures/face.png"
@@ -32,10 +33,10 @@ main = do
         Box white (Vector (-300) (g+300) 0) 600 10 262,
 
         -- wall
-        Box orange (Vector (-300) g 252) 600 116 10,
-        Box orange (Vector (-300) (g+270) 252) 600 30 10,
-        Box orange (Vector (-300) (g+116) 252) 98 154 10,
-        Box orange (Vector (2) (g+116) 252) 298 154 10,
+        Box blue (Vector (-300) g 252) 600 116 10,
+        Box blue (Vector (-300) (g+270) 252) 600 30 10,
+        Box blue (Vector (-300) (g+116) 252) 98 154 10,
+        Box blue (Vector (2) (g+116) 252) 298 154 10,
         Box white (Vector (-300) g 250) 600 7 2,
         -- window
         Box white (Vector (-202) (g+116) 246) 204 6 16,
@@ -55,11 +56,11 @@ main = do
         Box marble (Vector 20 (g+80) 200) 150 4 50,
         -- table drawers
         Box marble (Vector 110 (g) (200)) 50 20 50,
-        Box marble (Vector 131 (g+9) 197) 8 2 3,
+        Box silver (Vector 131 (g+9) 197) 8 2 3,
         Box marble (Vector 110 (g+20) 195) 50 30 50,
-        Box marble (Vector 131 (g+34) 192) 8 2 3,
+        Box silver (Vector 131 (g+34) 192) 8 2 3,
         Box marble (Vector 110 (g+50) 200) 50 30 50,
-        Box marble (Vector 131 (g+64) 197) 8 2 3,
+        Box silver (Vector 131 (g+64) 197) 8 2 3,
 
         -- desktop from 35 g+94 130
         -- bezel
@@ -75,6 +76,8 @@ main = do
         Box darksilver (Vector 60 (g+84) 226) 20 2 10,
         -- keyboard
         Box silver (Vector 54 (g+84) 210) 32 (0.5) 9,
+        -- mouse
+        Ellipsoid darksilver (Vector 100 (g+84) 220) 3 2 4,
 
         Cylinder wood (Vector 120 (g+84) 220) 10 10,
 
@@ -130,7 +133,7 @@ main = do
 
 -- | Renders an image out to a file
 renderImage :: (Image PixelRGB8, Int) -> IO ()
-renderImage (image, i) = writePng ("output/" ++ show i ++ ".png") $ image  
+renderImage (image, i) = writePng ("output/" ++ (reverse . take 3 . reverse) ("000" ++ show i) ++ ".png") $ image  
 
 -- | Renders a single frame from the given position of the camera, output resolution, and [objects, lights]
 renderSingle :: Vector -> (Int, Int) -> World -> Image PixelRGB8
