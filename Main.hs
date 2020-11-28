@@ -38,7 +38,7 @@ main = do
         Box orange (Vector (2) (g+116) 252) 298 154 10,
         Box white (Vector (-300) g 250) 600 7 2,
         -- window
-        Box white (Vector (-202) (g+116) 248) 204 4 16,
+        Box white (Vector (-202) (g+116) 246) 204 6 16,
         Box white (Vector (-202) (g+120) 250) 2 150 12,
         Box white (Vector (-101) (g+120) 250) 2 150 12,
         Box white (Vector 0 (g+120) 250) 2 150 12,
@@ -76,6 +76,24 @@ main = do
         -- keyboard
         Box silver (Vector 54 (g+84) 210) 32 (0.5) 9,
 
+        Cylinder wood (Vector 120 (g+84) 220) 10 10,
+
+        -- bookshelf
+        Box wood (Vector 170 g 220) 100 3 30,
+        Box wood (Vector 170 (g+297) 220) 100 3 30,
+        Box wood (Vector 170 (g+3) 220) 3 294 30,
+        Box wood (Vector 267 (g+3) 220) 3 294 30,
+
+        -- books
+        Box wood (Vector 173 (g+33) 220) 94 3 30,
+        Box wood (Vector 173 (g+66) 220) 94 3 30,
+        Box wood (Vector 173 (g+100) 220) 94 3 30,
+        Box wood (Vector 173 (g+150) 220) 94 3 30,
+        Box wood (Vector 173 (g+180) 220) 94 3 30,
+        Box wood (Vector 173 (g+210) 220) 94 3 30,
+        Box wood (Vector 173 (g+250) 220) 94 3 30,
+        Box wood (Vector 173 (g+280) 220) 94 3 30,
+
         -- face
         Ellipsoid face (Vector (-5) (g+120) 40) 7.5 12 10,
         -- body
@@ -83,32 +101,40 @@ main = do
         ]
   -- illuminations
   let lights = [
-        SphericalLight sun 500 (Vector 0 500 0) 0,
-        SphericalLight lamp 80 (Vector 200 (g+290) 200) 40,
-        SphericalLight lamp 80 (Vector (-200) (g+290) 200) 40,
-        SphericalLight lamp 80 (Vector 200 (g+290) 0) 40,
-        SphericalLight lamp 80 (Vector (-200) (g+290) 0) 40,
+        -- SphericalLight sun 500 (Vector 0 500 0) 0,  
+        -- uncomment when Shadow is On
+        SphericalLight lamp 80 (Vector 200 (g+290) 100) 40,
+        SphericalLight lamp 80 (Vector (-200) (g+290) 100) 40,
         SphericalLight bluelight 10 (Vector 0 0 (-60)) 30
-      --   SphericalLight bluelight 10 (Vector 70 (g+94+20) 228.6) 30
         ]
   
   -- render the images for the provided positions
   -- camera needs to go from 0,0,0 to 60,10,100 (center is 50, -6, 320)
   -- so, interpolate from 0..150 and divide each value accordingly
   let images = [
-        renderSingle (Vector x y z) (192, 108) (objects, lights)
-        | i <- [0..150],
+        renderSingle (Vector x y z) (1920, 1080) (objects, lights)
+        | i <- [0, 75, 140, 150],
           let j = (fromIntegral i),
-          let x = j/1.6345,
+          let x = j/1.634615,
           let y = j/(44), -- so much manual tweaking was done with these three values... ;( time gone
-          let z = 10 + j/(150/(228.658 - 10))]
+          let z = j/(150/(226.75))]
+
+  -- render each out as a png instead of GIF for two reasons:
+  -- 1. I can visibly see the progress, useful for estimation (not possible with lazy eval monads)
+  -- 2. I can stop halfway through and still use the data
+  -- 3. I can combine into GIF using an external tool anyway
+  mapM_ renderImage (zip images [0..])
 
   -- convert to GIF and output it
-  fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
+  -- fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
+
+-- | Renders an image out to a file
+renderImage :: (Image PixelRGB8, Int) -> IO ()
+renderImage (image, i) = writePng ("output/" ++ show i ++ ".png") $ image  
 
 -- | Renders a single frame from the given position of the camera, output resolution, and [objects, lights]
 renderSingle :: Vector -> (Int, Int) -> World -> Image PixelRGB8
-renderSingle pos outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (1.7777, 1, 1) pos, world, outputSize, True)) outputSize
+renderSingle pos outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (1.7777, 1, 1) pos, world, outputSize, False)) outputSize
 
 -- | Taken from `fromRight` in the newer versions of Prelude 
 fromRight :: b -> Either a b -> b
