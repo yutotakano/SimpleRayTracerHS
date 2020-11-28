@@ -36,7 +36,8 @@ mkRay p v = Ray p (unitV v)
 data Object = Box Texture Vector Double Double Double | -- p1, w, h, d
               Plane Texture Vector Vector | -- n, p
               Ellipsoid Texture Vector Double Double Double | -- p1, radiusx, radiusy, radiusz
-              Cylinder Texture Vector Double Double -- p1, radius height
+              Cylinder Texture Vector Double Double | -- p1, radius height
+              CylinderBody Texture Vector Double Double
               deriving Eq
 
 data Light = SphericalLight PixelRGB8 Double Vector Double -- intensity, p1, radius
@@ -106,9 +107,28 @@ intersect r@(Ray origin direction) b@(Box texture (Vector x1 y1 z1) w h d) = fin
 -- Adapted from https://www.cl.cam.ac.uk/teaching/1999/AGraphHCI/SMAG/node2.html
 -- And https://mrl.cs.nyu.edu/~dzorin/cg05/lecture12.pdf
 -- Added custom math to rotate Cylinder by any normal
-intersect r@(Ray o d) cyl@(Cylinder texture p1@(Vector x y z) radius height)
+intersect r@(Ray origin direction) cyl@(Cylinder texture p1@(Vector x y z) rad h)
+  | maincyl /= Nothing = maincyl
+  | otherwise = findClosest caps
+  where
+    maincyl = intersect r (CylinderBody texture p1 rad h)
+
+    caps = [
+      (t, normal, cyl)
+      | Just (t, normal, object) <- [
+          intersect r c | c <- [cap1, cap2]
+        ], 
+        let vec = origin >+< (direction >*< t),
+        moduloV (vec >-< p1) - rad <= allowedMargin
+      ]
+    
+    cap1 = Plane texture (Vector 0 0 (-1)) p1
+    cap2 = Plane texture (Vector 0 0 1) (Vector x y (z+h))
+
+intersect r@(Ray o d) cyl@(CylinderBody texture p1@(Vector x y z) radius height)
   | nabla <= 0 = Nothing
   | t1 < 0 && t2 < 0 = Nothing
+  | i_z - z < -allowedMargin || z + height - i_z < -allowedMargin = Nothing
   | otherwise = Just (t, normal, cyl)
   where
     (Vector o_x o_y o_z) = o
@@ -225,12 +245,19 @@ getColourOfObjectAt vec@(Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getC
     (Vector nx ny nz) = unitV (vec >-< p1)
     u = ((atan2 nx (-nz) / (2*3.15) + 0.5) - 0.04) `mod'` 1
     v = 1 - ny * 0.5 - 0.5
-
-getColourOfObjectAt vec@(Vector ix iy iz) (Cylinder texture (Vector px py pz) r h) = getColourFromTextureAt u v texture
+-- Main body cylinder, similar to Sphere
+getColourOfObjectAt vec@(Vector ix iy iz) (CylinderBody texture (Vector px py pz) r h) = getColourFromTextureAt u v texture
   where
     (Vector nx ny nz) = unitV (vec >-< (Vector px py iz))
     u = ((atan2 nx (-ny) / (2*3.15) + 0.5) - 0.04) `mod'` 1
-    v = 1
+    v = (pz+h-iz)/h
+
+-- Cap part of cylinder
+getColourOfObjectAt vec@(Vector ix iy iz) (Cylinder texture (Vector px py pz) r h)
+  | abs (iz - pz) < allowedMargin = 
+    getColourFromTextureAt ((ix - px + r)/(2*r)) ((3*r - iy - py)/(2*r) `mod'` 1) texture
+  | otherwise = 
+    getColourFromTextureAt ((3*r - ix - px)/(2*r) `mod'` 1) ((3*r - iy - py)/(2*r) `mod'` 1) texture
 
 getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
 
