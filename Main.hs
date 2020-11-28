@@ -1,9 +1,10 @@
 module Main where
 
 import System.Environment
+import Data.List
+import Debug.Trace
 import Codec.Picture
 import Vector
-import Debug.Trace
 import RayTracer
 
 -- default ground y-level
@@ -30,7 +31,7 @@ main = do
   edinburgh <- getTexture "textures/edinburgh.jpg"
   wood <- getTexture "textures/wood.jpg"
   face <- getTexture "textures/face.png"
-  zoom <- getTexture ("textures/zoom-" ++ (if "--shadow" `elem` args then [] else "no") ++ "shadow.png")
+  zoom <- getTexture ("textures/zoom-" ++ (if "--shadow" `elem` args then "no" else "no") ++ "shadow.png")
   marble <- getTexture "textures/marble.jpg"
   clothes <- getTexture "textures/clothes.png"
   -- list of all objects in the world
