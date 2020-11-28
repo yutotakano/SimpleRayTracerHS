@@ -119,7 +119,7 @@ intersect r@(Ray origin direction) cyl@(Cylinder texture p1@(Vector x y z) rad h
           intersect r c | c <- [cap1, cap2]
         ], 
         let vec = origin >+< (direction >*< t),
-        moduloV (vec >-< p1) - rad <= allowedMargin
+        moduloV (vec >-< p1) - rad <= allowedMargin || moduloV (vec >-< (Vector x (y+h) z)) - rad <= allowedMargin
       ]
     
     cap1 = Plane texture (Vector 0 (-1) 0) p1
@@ -255,9 +255,9 @@ getColourOfObjectAt vec@(Vector ix iy iz) (CylinderBody texture (Vector px py pz
 -- Cap part of cylinder
 getColourOfObjectAt vec@(Vector ix iy iz) (Cylinder texture (Vector px py pz) r h)
   | abs (iy - py) < allowedMargin = 
-    getColourFromTextureAt ((ix - px + r)/(2*r)) ((3*r - iz - pz)/(2*r) `mod'` 1) texture
+    getColourFromTextureAt (((r + ix - px)/(2*r)) `mod'` 1) (((3*r - iz - pz)/(2*r)) `mod'` 1) texture
   | otherwise = 
-    getColourFromTextureAt ((3*r - ix - px)/(2*r) `mod'` 1) ((3*r - iz - pz)/(2*r) `mod'` 1) texture
+    getColourFromTextureAt (((3*r - ix - px)/(2*r)) `mod'` 1) (((3*r - iz - pz)/(2*r)) `mod'` 1) texture
 
 getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
 
