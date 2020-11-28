@@ -61,8 +61,8 @@ main = do
         -- outside
         Box edinburgh (Vector (-600) (g+100) 500) 600 338 1,
 
-        Box box (Vector (-100) g 215) 50 30 30,
-        Box mamazon (Vector (-100) g 214.9) 50 30 0.1,
+        Box box (Vector (-140) g 185) 100 60 60,
+        Box mamazon (Vector (-140) g 184.9) 100 60 0.1,
 
         -- table legs
         Box marble (Vector 20 g 200) 10 80 10,
