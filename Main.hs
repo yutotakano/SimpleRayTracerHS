@@ -14,7 +14,9 @@ main :: IO ()
 main = do
   args <- getArgs
   let resolution = setResolution args
-  debugNotice args resolution
+      shadow = "--shadow" `elem` args
+      single = "--single" `elem` args
+  debugNotice args (resolution, shadow, single)
   -- lights can only have a colour
   let lamp = PixelRGB8 231 227 216
       bluelight = PixelRGB8 236 243 255
@@ -31,7 +33,7 @@ main = do
   edinburgh <- getTexture "textures/edinburgh.jpg"
   wood <- getTexture "textures/wood.jpg"
   face <- getTexture "textures/face.png"
-  zoom <- getTexture ("textures/zoom-" ++ (if "--shadow" `elem` args then "no" else "no") ++ "shadow.png")
+  zoom <- getTexture ("textures/zoom-" ++ (if shadow then [] else "no") ++ "shadow.png")
   marble <- getTexture "textures/marble.jpg"
   clothes <- getTexture "textures/clothes.png"
   -- list of all objects in the world
@@ -132,14 +134,14 @@ main = do
         SphericalLight lamp 80 (Vector 200 (g+290) 100) 40,
         SphericalLight lamp 80 (Vector (-200) (g+290) 100) 40,
         SphericalLight bluelight 10 (Vector 0 0 (-60)) 30
-        ] ++ (if "--shadow" `elem` args then [SphericalLight sun 500 (Vector 0 500 0) 0] else [])
+        ] ++ (if shadow then [SphericalLight sun 500 (Vector 0 500 0) 0] else [])
   
   -- render the images for the provided positions
   -- camera needs to go from 0,0,0 to 91.7647275,3.4090909,226.75
   -- so, interpolate from 0..150 and divide each value accordingly
   let images = [
-        renderSingle (Vector x y z) resolution (objects, lights) ("--shadow" `elem` args)
-        | i <- [0..150],
+        renderSingle (Vector x y z) resolution (objects, lights) shadow
+        | i <- (if single then [0] else [0..150]),
           let j = (fromIntegral i),
           let x = j/(150/91.7647275),
           let y = j/(44), -- so much manual tweaking was done with these three values... ;( time gone
@@ -154,9 +156,11 @@ main = do
   -- convert to GIF and output it
   -- fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
 
-debugNotice :: [String] -> (Int, Int) -> IO ()
-debugNotice args res = putStrLn ("Running SimpleRayTracerHS with args: " ++ intercalate " " args) >>
-                       putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res))
+debugNotice :: [String] -> ((Int, Int), Bool, Bool) -> IO ()
+debugNotice args (res, sh, si) = putStrLn ("Running SimpleRayTracerHS with args: " ++ intercalate " " args) >>
+                                 putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res)) >>
+                                 putStrLn ("Shadow Enabled: " ++ if sh then "yes" else "no") >>
+                                 putStrLn ("Full Render: " ++ if si then "no" else "yes")
 
 setResolution :: [String] -> (Int, Int)
 setResolution args
