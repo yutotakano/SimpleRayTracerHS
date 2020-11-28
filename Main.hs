@@ -1,5 +1,6 @@
 module Main where
 
+import System.Environment
 import Codec.Picture
 import Vector
 import Debug.Trace
@@ -10,6 +11,9 @@ g = -120
 
 main :: IO ()
 main = do
+  args <- getArgs
+  let resolution = setResolution args
+  debugNotice args resolution
   -- lights can only have a colour
   let lamp = PixelRGB8 231 227 216
       bluelight = PixelRGB8 236 243 255
@@ -20,11 +24,15 @@ main = do
       silver = Colour (PixelRGB8 197 197 197)
       darksilver = Colour (PixelRGB8 124 124 124)
       blue = Colour (PixelRGB8 136 175 238)
+      red = Colour (PixelRGB8 204 51 51)
+      brown = Colour (PixelRGB8 73 2 0)
+      brown2 = Colour (PixelRGB8 108 79 81)
   edinburgh <- getTexture "textures/edinburgh.jpg"
   wood <- getTexture "textures/wood.jpg"
   face <- getTexture "textures/face.png"
-  zoom <- getTexture "textures/zoom.png"
+  zoom <- getTexture ("textures/zoom-" ++ (if "--shadow" `elem` args then [] else "no") ++ "shadow.png")
   marble <- getTexture "textures/marble.jpg"
+  clothes <- getTexture "textures/clothes.png"
   -- list of all objects in the world
   let objects = [
         -- ground
@@ -57,8 +65,15 @@ main = do
         -- table drawers
         Box marble (Vector 110 (g) (200)) 50 20 50,
         Box silver (Vector 131 (g+9) 197) 8 2 3,
-        Box marble (Vector 110 (g+20) 195) 50 30 50,
+        
+        Box marble (Vector 110 (g+20) 200) 2 30 50,
+        Box marble (Vector 158 (g+20) 200) 2 30 50,
+        Box marble (Vector 112 (g+20) 195) 2 30 50,
+        Box marble (Vector 156 (g+20) 195) 2 30 50,
+        Box marble (Vector 112 (g+20) 248) 46 30 2,
+        Box marble (Vector 112 (g+20) 195) 46 30 2,
         Box silver (Vector 131 (g+34) 192) 8 2 3,
+        
         Box marble (Vector 110 (g+50) 200) 50 30 50,
         Box silver (Vector 131 (g+64) 197) 8 2 3,
 
@@ -79,7 +94,11 @@ main = do
         -- mouse
         Ellipsoid darksilver (Vector 100 (g+84) 220) 3 2 4,
 
-        Cylinder wood (Vector 120 (g+84) 220) 10 10,
+        -- mug 
+        Cylinder red (Vector 120 (g+84) 220) 3.5 10,
+        Cylinder red (Vector 126 (g+88) 220) 0.5 4,
+        Box red (Vector 123.5 (g+87.5) 219.5) 2.5 1 1,
+        Box red (Vector 123.5 (g+92) 219.5) 2.5 1 1,
 
         -- bookshelf
         Box wood (Vector 170 g 220) 100 3 30,
@@ -91,6 +110,11 @@ main = do
         Box wood (Vector 173 (g+33) 220) 94 3 30,
         Box wood (Vector 173 (g+66) 220) 94 3 30,
         Box wood (Vector 173 (g+100) 220) 94 3 30,
+        
+        Box brown (Vector 173 (g+103) 225) 4 20 27,
+        Box brown2 (Vector 178 (g+103) 225) 3 30 27,
+        Box brown (Vector 181 (g+103) 223) 3 23 20,
+
         Box wood (Vector 173 (g+150) 220) 94 3 30,
         Box wood (Vector 173 (g+180) 220) 94 3 30,
         Box wood (Vector 173 (g+210) 220) 94 3 30,
@@ -100,27 +124,25 @@ main = do
         -- face
         Ellipsoid face (Vector (-5) (g+120) 40) 7.5 12 10,
         -- body
-        Ellipsoid marble (Vector (-5) (g+70) 40) 15 50 10
+        Ellipsoid clothes (Vector (-5) (g+70) 40) 15 50 10
         ]
   -- illuminations
   let lights = [
-        -- SphericalLight sun 500 (Vector 0 500 0) 0,  
-        -- uncomment when Shadow is On
         SphericalLight lamp 80 (Vector 200 (g+290) 100) 40,
         SphericalLight lamp 80 (Vector (-200) (g+290) 100) 40,
         SphericalLight bluelight 10 (Vector 0 0 (-60)) 30
-        ]
+        ] ++ (if "--shadow" `elem` args then [SphericalLight sun 500 (Vector 0 500 0) 0] else [])
   
   -- render the images for the provided positions
-  -- camera needs to go from 0,0,0 to 60,10,100 (center is 50, -6, 320)
+  -- camera needs to go from 0,0,0 to 91.7647275,3.4090909,226.75
   -- so, interpolate from 0..150 and divide each value accordingly
   let images = [
-        renderSingle (Vector x y z) (1920, 1080) (objects, lights)
-        | i <- [0, 75, 140, 150],
+        renderSingle (Vector x y z) resolution (objects, lights) ("--shadow" `elem` args)
+        | i <- [0..150],
           let j = (fromIntegral i),
-          let x = j/1.634615,
+          let x = j/(150/91.7647275),
           let y = j/(44), -- so much manual tweaking was done with these three values... ;( time gone
-          let z = j/(150/(226.75))]
+          let z = j/(150/226.75)]
 
   -- render each out as a png instead of GIF for two reasons:
   -- 1. I can visibly see the progress, useful for estimation (not possible with lazy eval monads)
@@ -131,13 +153,25 @@ main = do
   -- convert to GIF and output it
   -- fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
 
+debugNotice :: [String] -> (Int, Int) -> IO ()
+debugNotice args res = putStrLn ("Running SimpleRayTracerHS with args: " ++ concat args) >>
+                       putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res))
+
+setResolution :: [String] -> (Int, Int)
+setResolution args
+  | fromRes == [] = (960, 540)
+  | otherwise = ((read . takeWhile (/= ':')) resolarg, (read . drop 1 . dropWhile (/= ':')) resolarg)
+    where
+      fromRes = dropWhile (/= "--res") args
+      resolarg = head (drop 1 fromRes)
+
 -- | Renders an image out to a file
 renderImage :: (Image PixelRGB8, Int) -> IO ()
 renderImage (image, i) = writePng ("output/" ++ (reverse . take 3 . reverse) ("000" ++ show i) ++ ".png") $ image  
 
 -- | Renders a single frame from the given position of the camera, output resolution, and [objects, lights]
-renderSingle :: Vector -> (Int, Int) -> World -> Image PixelRGB8
-renderSingle pos outputSize world = snd $ uncurry (generateFoldImage renderAtPixel (Screen (1.7777, 1, 1) pos, world, outputSize, False)) outputSize
+renderSingle :: Vector -> (Int, Int) -> World -> Bool -> Image PixelRGB8
+renderSingle pos outputSize world shadow = snd $ uncurry (generateFoldImage renderAtPixel (Screen (1.7777, 1, 1) pos, world, outputSize, shadow)) outputSize
 
 -- | Taken from `fromRight` in the newer versions of Prelude 
 fromRight :: b -> Either a b -> b
