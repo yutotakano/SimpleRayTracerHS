@@ -35,7 +35,8 @@ mkRay p v = Ray p (unitV v)
 
 data Object = Box Texture Vector Double Double Double | -- p1, w, h, d
               Plane Texture Vector Vector | -- n, p
-              Ellipsoid Texture Vector Double Double Double -- p1, radiusx, radiusy, radiusz
+              Ellipsoid Texture Vector Double Double Double | -- p1, radiusx, radiusy, radiusz
+              Cylinder Texture Vector Double Double -- p1, radius height
               deriving Eq
 
 data Light = SphericalLight PixelRGB8 Double Vector Double -- intensity, p1, radius
@@ -101,6 +102,32 @@ intersect r@(Ray origin direction) b@(Box texture (Vector x1 y1 z1) w h d) = fin
     n6 = Vector 1 0 0
     p6 = Plane texture n6 (Vector (x1+w) y1 z1)
 
+-- Intersect with Cylinder.
+-- Adapted from https://www.cl.cam.ac.uk/teaching/1999/AGraphHCI/SMAG/node2.html
+-- And https://mrl.cs.nyu.edu/~dzorin/cg05/lecture12.pdf
+-- Added custom math to rotate Cylinder by any normal
+intersect r@(Ray o d) cyl@(Cylinder texture p1@(Vector x y z) radius height)
+  | nabla <= 0 = Nothing
+  | t1 < 0 && t2 < 0 = Nothing
+  | otherwise = Just (t, normal, cyl)
+  where
+    (Vector o_x o_y o_z) = o
+    (Vector d_x d_y d_z) = d
+    
+    a = d_x**2 + d_y**2
+    b = 2*(o_x*d_x + o_y*d_y - x*d_x - y*d_y)
+    c = o_x**2 + o_y**2 - 2*x*o_x - 2*y*o_y + x**2 + y**2 - radius**2 - 1
+    
+    nabla = b**2 - 4*a*c
+    t1 = (-b + sqrt nabla) / (2*a)
+    t2 = (-b - sqrt nabla) / (2*a)
+    t | t1 < 0 && t2 >= 0 = t2
+      | t1 >= 0 && t1 < 0 = t1
+      | otherwise = min t1 t2
+    i@(Vector i_x i_y i_z) = o >+< (d >*< t)
+    normal = unitV $ i >-< (Vector x y i_z)
+
+
 -- | Find closest intersection based on distance
 -- Gets only the positive result.
 findClosest :: [Intersection] -> Maybe Intersection
@@ -108,10 +135,10 @@ findClosest [] = Nothing
 findClosest (a@(t, Vector x y z, m):[]) 
   | t >= 0 = Just a
   | t < 0 = Nothing
-findClosest l@(p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
-  | t < 0 && s < 0 = findClosest xs
-  | t < 0 = findClosest (q:xs)
-  | s < 0 = findClosest (p:xs)
+findClosest (p@(t, Vector x y z, m):q@(s, Vector a b c, n):xs)
+  | t < 0 && s < 0  = findClosest xs
+  | t < 0 && s >= 0 = findClosest (q:xs)
+  | t >= 0 && s < 0 = findClosest (p:xs)
   | t < s = findClosest (p:xs)
   | s < t = findClosest (q:xs)
   | t == s = findClosest (p:xs)
@@ -198,6 +225,12 @@ getColourOfObjectAt vec@(Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getC
     (Vector nx ny nz) = unitV (vec >-< p1)
     u = ((atan2 nx (-nz) / (2*3.15) + 0.5) - 0.04) `mod'` 1
     v = 1 - ny * 0.5 - 0.5
+
+getColourOfObjectAt vec@(Vector ix iy iz) (Cylinder texture (Vector px py pz) r h) = getColourFromTextureAt u v texture
+  where
+    (Vector nx ny nz) = unitV (vec >-< (Vector px py iz))
+    u = ((atan2 nx (-ny) / (2*3.15) + 0.5) - 0.04) `mod'` 1
+    v = 1
 
 getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
 
