@@ -242,9 +242,10 @@ getColourOfObjectAt (Vector ix iy iz) (Box texture (Vector x y z) w h d)
 -- https://gamedev.stackexchange.com/questions/114412/how-to-get-uv-coordinates-for-sphere-cylindrical-projection/114416
 getColourOfObjectAt vec@(Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getColourFromTextureAt u v texture
   where
-    (Vector nx ny nz) = unitV (vec >-< p1)
+    (Vector p1_x p1_y p1_z) = p1
+    (Vector nx ny nz) = unitV $ vec >-< p1
     u = ((atan2 nx (-nz) / (2*3.15) + 0.5) - 0.04) `mod'` 1
-    v = 1 - ny * 0.5 - 0.5
+    v = ((p1_y + ry - iy) / (2*ry)) `mod'` 1
 -- Main body cylinder, similar to Sphere
 getColourOfObjectAt vec@(Vector ix iy iz) (CylinderBody texture (Vector px py pz) r h) = getColourFromTextureAt u v texture
   where
