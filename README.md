@@ -8,7 +8,8 @@ Details are a secret until the competition is over.
 
 ```
 --shadow        Turns on the shadow if specified. 
---res 192:108   Specifies the output resolution
+--single        Renders only first frame.
+--res 192:108   Specifies the output resolution.
 ```
 
 ## Libraries
