@@ -122,21 +122,21 @@ intersect r@(Ray origin direction) cyl@(Cylinder texture p1@(Vector x y z) rad h
         moduloV (vec >-< p1) - rad <= allowedMargin
       ]
     
-    cap1 = Plane texture (Vector 0 0 (-1)) p1
-    cap2 = Plane texture (Vector 0 0 1) (Vector x y (z+h))
+    cap1 = Plane texture (Vector 0 (-1) 0) p1
+    cap2 = Plane texture (Vector 0 1 0) (Vector x (y+h) z)
 
 intersect r@(Ray o d) cyl@(CylinderBody texture p1@(Vector x y z) radius height)
   | nabla <= 0 = Nothing
   | t1 < 0 && t2 < 0 = Nothing
-  | i_z - z < -allowedMargin || z + height - i_z < -allowedMargin = Nothing
+  | i_y - y < -allowedMargin || y + height - i_y < -allowedMargin = Nothing
   | otherwise = Just (t, normal, cyl)
   where
     (Vector o_x o_y o_z) = o
     (Vector d_x d_y d_z) = d
     
-    a = d_x**2 + d_y**2
-    b = 2*(o_x*d_x + o_y*d_y - x*d_x - y*d_y)
-    c = o_x**2 + o_y**2 - 2*x*o_x - 2*y*o_y + x**2 + y**2 - radius**2 - 1
+    a = d_x**2 + d_z**2
+    b = 2*(o_x*d_x + o_z*d_z - x*d_x - z*d_z)
+    c = o_x**2 + o_z**2 - 2*x*o_x - 2*z*o_z + x**2 + z**2 - radius**2 - 1
     
     nabla = b**2 - 4*a*c
     t1 = (-b + sqrt nabla) / (2*a)
@@ -249,15 +249,15 @@ getColourOfObjectAt vec@(Vector ix iy iz) (Ellipsoid texture p1 rx ry rz) = getC
 getColourOfObjectAt vec@(Vector ix iy iz) (CylinderBody texture (Vector px py pz) r h) = getColourFromTextureAt u v texture
   where
     (Vector nx ny nz) = unitV (vec >-< (Vector px py iz))
-    u = ((atan2 nx (-ny) / (2*3.15) + 0.5) - 0.04) `mod'` 1
-    v = (pz+h-iz)/h
+    u = ((atan2 nx (-nz) / (2*3.15) + 0.5) - 0.04) `mod'` 1
+    v = (py+h-iy)/h
 
 -- Cap part of cylinder
 getColourOfObjectAt vec@(Vector ix iy iz) (Cylinder texture (Vector px py pz) r h)
-  | abs (iz - pz) < allowedMargin = 
-    getColourFromTextureAt ((ix - px + r)/(2*r)) ((3*r - iy - py)/(2*r) `mod'` 1) texture
+  | abs (iy - py) < allowedMargin = 
+    getColourFromTextureAt ((ix - px + r)/(2*r)) ((3*r - iz - pz)/(2*r) `mod'` 1) texture
   | otherwise = 
-    getColourFromTextureAt ((3*r - ix - px)/(2*r) `mod'` 1) ((3*r - iy - py)/(2*r) `mod'` 1) texture
+    getColourFromTextureAt ((3*r - ix - px)/(2*r) `mod'` 1) ((3*r - iz - pz)/(2*r) `mod'` 1) texture
 
 getColourOfObjectAt (Vector ix iy iz) (Plane texture n p1) = getColourFromTextureAt 1 1 texture
 
