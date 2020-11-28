@@ -25,3 +25,9 @@ unitV v = v >/< (moduloV v)
 
 (×) :: Vector -> Vector -> Vector
 (Vector x y z) × (Vector a b c) = Vector (y*c - z*b) (z*a - x*c) (x*b - y*a)
+
+standardize :: Vector -> [Vector] -> Vector
+standardize (Vector a b c) [b1, b2, b3] = (b1 >*< a) >+< (b2 >*< b) >+< (b3 >*< c)
+
+changeBasis :: Vector -> [Vector] -> Vector
+changeBasis v [b1, b2, b3] = Vector (v • b1/b1 • b1) (v • b2/b2 • b2) (v • b3/b3 • b3)
