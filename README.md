@@ -1,8 +1,15 @@
 # SimpleRayTracerHS
 
-This is RayTracer built in Haskell, for the Functional Programming competition at University of Edinburgh. It's not simple, contrary to the name.
+This is RayTracer built in Haskell, for the Functional Programming competition at University of Edinburgh. 
 
 Details are a secret until the competition is over.
+
+## Command-line arguments:
+
+```
+--shadow        Turns on the shadow if specified. 
+--res 192:108   Specifies the output resolution
+```
 
 ## Libraries
 
