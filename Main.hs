@@ -23,19 +23,22 @@ main = do
       sun = PixelRGB8 246 209 0
   -- material can be both colour and texture (loaded with getTexture)
   let white = Colour (PixelRGB8 255 255 255)
-      orange = Colour (PixelRGB8 238 162 57)
+      board = Colour (PixelRGB8 101 188 80)
       silver = Colour (PixelRGB8 197 197 197)
       darksilver = Colour (PixelRGB8 124 124 124)
       blue = Colour (PixelRGB8 136 175 238)
       red = Colour (PixelRGB8 204 51 51)
       brown = Colour (PixelRGB8 73 2 0)
       brown2 = Colour (PixelRGB8 108 79 81)
+      box = Colour (PixelRGB8 177 142 90)
   edinburgh <- getTexture "textures/edinburgh.jpg"
   wood <- getTexture "textures/wood.jpg"
   face <- getTexture "textures/face.png"
   zoom <- getTexture ("textures/zoom-" ++ (if shadow then [] else "no") ++ "shadow.png")
   marble <- getTexture "textures/marble.jpg"
   clothes <- getTexture "textures/clothes.png"
+  postit <- getTexture "textures/ilaquiz.png"
+  mamazon <- getTexture "textures/mamazon.png"
   -- list of all objects in the world
   let objects = [
         -- ground
@@ -57,6 +60,9 @@ main = do
         Box white (Vector (-202) (g+270) 250) 204 2 12,
         -- outside
         Box edinburgh (Vector (-600) (g+100) 500) 600 338 1,
+
+        Box box (Vector (-100) g 215) 50 30 30,
+        Box mamazon (Vector (-100) g 214.9) 50 30 0.1,
 
         -- table legs
         Box marble (Vector 20 g 200) 10 80 10,
@@ -102,6 +108,9 @@ main = do
         Cylinder red (Vector 126 (g+88) 220) 0.5 4,
         Box red (Vector 123.5 (g+87.5) 219.5) 2.5 1 1,
         Box red (Vector 123.5 (g+92) 219.5) 2.5 1 1,
+
+        Box board (Vector 90 (g+120) 250) 70 80 2,
+        Box postit (Vector 100 (g+140) 249.8) 10 10 0.2,
 
         -- bookshelf
         Box wood (Vector 170 g 220) 100 3 30,
