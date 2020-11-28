@@ -154,7 +154,7 @@ main = do
   -- fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
 
 debugNotice :: [String] -> (Int, Int) -> IO ()
-debugNotice args res = putStrLn ("Running SimpleRayTracerHS with args: " ++ concat args) >>
+debugNotice args res = putStrLn ("Running SimpleRayTracerHS with args: " ++ intercalate " " args) >>
                        putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res))
 
 setResolution :: [String] -> (Int, Int)
