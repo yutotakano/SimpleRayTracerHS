@@ -15,8 +15,8 @@ main = do
   args <- getArgs
   let resolution = setResolution args
       shadow = "--shadow" `elem` args
-      single = "--single" `elem` args
-  debugNotice args (resolution, shadow, single)
+      frames = setFrames args
+  debugNotice args (resolution, shadow, frames)
   -- lights can only have a colour
   let lamp = PixelRGB8 231 227 216
       bluelight = PixelRGB8 236 243 255
@@ -150,7 +150,7 @@ main = do
   -- so, interpolate from 0..150 and divide each value accordingly
   let images = [
         renderSingle (Vector x y z) resolution (objects, lights) shadow
-        | i <- (if single then [0] else [0..150]),
+        | i <- frames,
           let j = (fromIntegral i),
           let x = j/(150/91.7647275),
           let y = j/(44), -- so much manual tweaking was done with these three values... ;( time gone
@@ -165,11 +165,11 @@ main = do
   -- convert to GIF and output it
   -- fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
 
-debugNotice :: [String] -> ((Int, Int), Bool, Bool) -> IO ()
-debugNotice args (res, sh, si) = putStrLn ("Running SimpleRayTracerHS with args: " ++ intercalate " " args) >>
+debugNotice :: [String] -> ((Int, Int), Bool, [Int]) -> IO ()
+debugNotice args (res, sh, frs) = putStrLn ("Running SimpleRayTracerHS with args: " ++ intercalate " " args) >>
                                  putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res)) >>
                                  putStrLn ("Shadow Enabled: " ++ if sh then "yes" else "no") >>
-                                 putStrLn ("Full Render: " ++ if si then "no" else "yes")
+                                 putStrLn ("Frame Count: " ++ show (length frs))
 
 setResolution :: [String] -> (Int, Int)
 setResolution args
@@ -178,6 +178,21 @@ setResolution args
     where
       fromRes = dropWhile (/= "--res") args
       resolarg = head (drop 1 fromRes)
+
+setFrames :: [String] -> [Int]
+setFrames args
+  | fromRes == [] = [0..150]
+  | otherwise = map read $ splitAt ',' framearg
+    where
+      fromRes = dropWhile (/= "--frames") args
+      framearg = head (drop 1 fromRes)
+      splitAt :: Char -> String -> [String]
+      splitAt c [] = []
+      splitAt c (x:xs)
+        | x == c = [] : splitRest
+        | otherwise = (x : head splitRest) : tail splitRest 
+          where
+            splitRest = splitAt c xs
 
 -- | Renders an image out to a file
 renderImage :: (Image PixelRGB8, Int) -> IO ()
