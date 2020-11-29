@@ -17,7 +17,8 @@ Either call the generated executable directly with the arguments below, or run o
 ### Command-line arguments:
 
 ```
---shadow        Turns on the shadow if specified. 
+--shadow        Turns on the shadow if specified.
+--noshadow-zoom If specified uses the no-shadow texture on Zoom. 
 --frames        If specified only renderes those frames. Separated by comma.
 --res 192:108   Specifies the output resolution.
 ```
