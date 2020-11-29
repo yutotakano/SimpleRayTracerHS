@@ -8,11 +8,13 @@ Details are a secret until the competition is over.
 
 Compile using GHC:
 ```
-ghc -O2 -fexcess-precision -optc-ffast-math -optc-O3 -rtsopts Main.hs
+ghc -O2 -fexcess-precision -optc-ffast-math -optc-O3 -threaded -rtsopts Main.hs
 ```
 The options enable faster floating point math, more optimization, and a profiler (which you can show by adding the `+RTS -s` flag to the executable).
 
 Either call the generated executable directly with the arguments below, or run on DICE using `nice`.
+
+Make sure to utilize available cores by using `+RTS -N<number>`.
 
 ### Command-line arguments:
 
