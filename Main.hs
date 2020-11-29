@@ -16,8 +16,9 @@ main = do
   args <- getArgs
   let resolution = setResolution args
       shadow = "--shadow" `elem` args
+      useNoShadowZoom = "--noshadow-zoom" `elem` args
       frames = setFrames args
-  debugNotice args (resolution, shadow, frames)
+  debugNotice args (resolution, shadow, useNoShadowZoom, frames)
   -- lights can only have a colour
   let lamp = PixelRGB8 231 227 216
       bluelight = PixelRGB8 236 243 255
@@ -35,7 +36,7 @@ main = do
   edinburgh <- getTexture "textures/edinburgh.jpg"
   wood <- getTexture "textures/wood.jpg"
   face <- getTexture "textures/face.png"
-  zoom <- getTexture ("textures/zoom-" ++ (if shadow then [] else "no") ++ "shadow.png")
+  zoom <- getTexture ("textures/zoom-" ++ (if shadow && (not useNoShadowZoom) then [] else "no") ++ "shadow.png")
   marble <- getTexture "textures/marble.jpg"
   clothes <- getTexture "textures/clothes.png"
   postit <- getTexture "textures/ilaquiz.png"
@@ -167,11 +168,12 @@ main = do
   -- convert to GIF and output it
   -- fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
 
-debugNotice :: [String] -> ((Int, Int), Bool, [Int]) -> IO ()
-debugNotice args (res, sh, frs) = putStrLn ("Running SimpleRayTracerHS with args: " ++ intercalate " " args) >>
-                                  putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res)) >>
-                                  putStrLn ("Shadow Enabled: " ++ if sh then "yes" else "no") >>
-                                  putStrLn ("Frame Count: " ++ show (length frs))
+debugNotice :: [String] -> ((Int, Int), Bool, Bool, [Int]) -> IO ()
+debugNotice args (res, sh, zm, frs) = 
+  putStrLn ("Running SimpleRayTracerHS with args: " ++ intercalate " " args) >>
+  putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res)) >>
+  putStrLn ("Shadow Enabled: " ++ if sh then (if zm then "yes (no shadow Zoom)" else "yes (shadow Zoom)") else "no") >>
+  putStrLn ("Frame Count: " ++ show (length frs))
 
 setResolution :: [String] -> (Int, Int)
 setResolution args
