@@ -286,8 +286,8 @@ type Shadow = Bool
 -- create a ray and shoot it from the origin (0, 0, focal point)
 -- get all intersections to the ray, and the colour of the intersected object
 -- and convert to RGB
-renderAtPixel :: (Screen, World, Resolution, Shadow) -> Int -> Int -> ((Screen, World, Resolution, Shadow), PixelRGB8)
-renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shadow) x' y' = (s, listToRGB8 $ getColour)
+renderAtPixel :: (Screen, World, Resolution, Shadow) -> Int -> Int -> PixelRGB8
+renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shadow) x' y' = listToRGB8 $ getColour
   where
     x = fromIntegral x'
     y = fromIntegral y'
