@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Concurrent.Async
 import System.Environment
 import Data.List
 import Debug.Trace
@@ -160,16 +161,17 @@ main = do
   -- 1. I can visibly see the progress, useful for estimation (not possible with lazy eval monads)
   -- 2. I can stop halfway through and still use the data
   -- 3. I can combine into GIF using an external tool anyway
-  mapM_ renderImage (zip images [0..])
+  mapConcurrently renderOut (zip images [0..])
+  return ()
 
   -- convert to GIF and output it
   -- fromRight (return ()) $ writeGifAnimation "output.gif" 50 LoopingForever images
 
 debugNotice :: [String] -> ((Int, Int), Bool, [Int]) -> IO ()
 debugNotice args (res, sh, frs) = putStrLn ("Running SimpleRayTracerHS with args: " ++ intercalate " " args) >>
-                                 putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res)) >>
-                                 putStrLn ("Shadow Enabled: " ++ if sh then "yes" else "no") >>
-                                 putStrLn ("Frame Count: " ++ show (length frs))
+                                  putStrLn ("Output resolution: " ++  show (fst res) ++ "x" ++ show (snd res)) >>
+                                  putStrLn ("Shadow Enabled: " ++ if sh then "yes" else "no") >>
+                                  putStrLn ("Frame Count: " ++ show (length frs))
 
 setResolution :: [String] -> (Int, Int)
 setResolution args
@@ -188,19 +190,23 @@ setFrames args
       framearg = head (drop 1 fromRes)
       splitAt :: Char -> String -> [String]
       splitAt c [] = []
-      splitAt c (x:xs)
-        | x == c = [] : splitRest
-        | otherwise = (x : head splitRest) : tail splitRest 
-          where
-            splitRest = splitAt c xs
+      splitAt c xs = (takeWhile (/= c) xs) : splitAt c (drop 1 $ dropWhile (/= c) xs)
 
 -- | Renders an image out to a file
-renderImage :: (Image PixelRGB8, Int) -> IO ()
-renderImage (image, i) = writePng ("output/" ++ (reverse . take 3 . reverse) ("000" ++ show i) ++ ".png") $ image  
+renderOut :: (IO (Image PixelRGB8), Int) -> IO ()
+renderOut (image, i) = do
+  im <- image
+  writePng ("output/" ++ (reverse . take 3 . reverse) ("000" ++ show i) ++ ".png") $ im  
 
 -- | Renders a single frame from the given position of the camera, output resolution, and [objects, lights]
-renderSingle :: Vector -> (Int, Int) -> World -> Bool -> Image PixelRGB8
-renderSingle pos outputSize world shadow = snd $ uncurry (generateFoldImage renderAtPixel (Screen (1.7777, 1, 1) pos, world, outputSize, shadow)) outputSize
+renderSingle :: Vector -> (Int, Int) -> World -> Bool -> IO (Image PixelRGB8)
+renderSingle pos (x,y) world shadow = do 
+  withImage x y (renderPixel pos (x,y) world shadow)
+
+renderPixel :: Vector -> (Int, Int) -> World -> Bool -> Int -> Int -> IO (PixelRGB8)
+renderPixel pos size world shadow i j = do
+  pixel <- async $ return $ renderAtPixel (Screen (1.7777, 1, 1) pos, world, size, shadow) i j
+  wait pixel
 
 -- | Taken from `fromRight` in the newer versions of Prelude 
 fromRight :: b -> Either a b -> b
