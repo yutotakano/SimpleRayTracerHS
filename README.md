@@ -53,7 +53,7 @@ Using `ffmpeg` this is as trivial as running:
 
 ![Image](examples/with-shadow.png)
 
-- `./Main --res 960:540 +RTS -s` (~110 minutes)
+- `./Main --res 1280:720 +RTS -s -N5` (~94 minutes)
 - `ffmpeg -i %03d.png output.gif`
 
 ![Image](examples/without-shadow.gif)
