@@ -2,5 +2,4 @@ dist-newstyle
 *.o
 *.hi
 Main
-*.gif
 output/*
