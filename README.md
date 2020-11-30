@@ -60,4 +60,4 @@ Using `ffmpeg` this is as trivial as running:
 
 ## Credits
 
-All textures are either hand-drawn (by me), free stock images (from Pixabay), or screenshots with faces blurred and names changed.
+All textures are either hand-drawn (by me), stock images, or screenshots with faces blurred and names changed.
