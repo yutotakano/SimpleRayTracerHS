@@ -202,18 +202,11 @@ renderOut (image, i) = do
 
 -- | Renders a single frame from the given position of the camera, output resolution, and [objects, lights]
 renderSingle :: Vector -> (Int, Int) -> World -> Bool -> IO (Image PixelRGB8)
-renderSingle pos (x,y) world shadow = do 
-  -- instead of using waitImage which takes an IO for pixel, generate all the pixels asyncrhonously first
-  -- then use generateImage for lists
-  pixels <- mapConcurrently (uncurry (renderPixel pos (x,y) world shadow)) [(j, i) | j <- [0..(y-1)], i <- [0..(x-1)]]
-  pixels2 <- mapConcurrently wait pixels
-  return $ generateImage (getPixelFrom (x,y) pixels2) x y
+renderSingle pos (x,y) world shadow = do
+  return $ generateImage (renderPixel pos (x,y) world shadow) x y
 
-renderPixel :: Vector -> (Int, Int) -> World -> Bool -> Int -> Int -> IO (Async PixelRGB8)
-renderPixel pos size world shadow j i = async $ renderAtPixel (Screen (1.7777, 1, 1) pos, world, size, shadow) i j
-
-getPixelFrom :: (Int, Int) -> [PixelRGB8] -> Int -> Int -> PixelRGB8
-getPixelFrom (x,y) pixels i j = head $ drop i (drop (j*x) pixels)
+renderPixel :: Vector -> (Int, Int) -> World -> Bool -> Int -> Int -> PixelRGB8
+renderPixel pos size world shadow i j = renderAtPixel (Screen (1.7777, 1, 1) pos, world, size, shadow) i j
 
 -- | Taken from `fromRight` in the newer versions of Prelude 
 fromRight :: b -> Either a b -> b

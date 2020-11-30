@@ -287,19 +287,16 @@ type Shadow = Bool
 -- create a ray and shoot it from the origin (0, 0, focal point)
 -- get all intersections to the ray, and the colour of the intersected object
 -- and convert to RGB
-renderAtPixel :: (Screen, World, Resolution, Shadow) -> Int -> Int -> IO PixelRGB8
-renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shadow) x' y' = do {
-    colour <- getColour;
-    return (listToRGB8 colour)
-  }
+renderAtPixel :: (Screen, World, Resolution, Shadow) -> Int -> Int -> PixelRGB8
+renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shadow) x' y' = listToRGB8 getColour
   where
     x = fromIntegral x'
     y = fromIntegral y'
 
-    getColour :: IO [Int]
+    getColour :: [Int]
     getColour 
       | iExist    = iColour
-      | otherwise = return [0, 0, 0]
+      | otherwise = [0, 0, 0]
     
     intersection :: Maybe Intersection
     intersection = findClosest [a | Just a <- [intersect (mkRay (pos >+< iRayO) iRayD) item | item <- objects]]
@@ -310,13 +307,11 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shad
     iExist :: Bool
     iExist = intersection /= Nothing 
 
-    iColour :: IO [Int]
-    iColour = mapConcurrently roundSum $ transpose [
+    iColour :: [Int]
+    iColour = map (round.sum) $ transpose [
       iColourFromLight light
       | light <- lights
       ]
-    roundSum :: [Double] -> IO Int
-    roundSum xs = return $ (round.sum) xs
 
     iColourFromLight :: Light -> [Double]
     iColourFromLight light

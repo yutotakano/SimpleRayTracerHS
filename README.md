@@ -14,8 +14,6 @@ ghc -O2 -fexcess-precision -optc-ffast-math -optc-O3 -threaded -rtsopts Main.hs
 ```
 The options enable faster floating point math, more optimization, multi-thread compatibility, and a profiler (which you can show by adding the `+RTS -s` flag to the executable).
 
-Due to the overhead of keeping track of concurrent threads (I think), the script runs out of memory on most consumer-level hardware. It works on DICE (UoE computing servers) using about 70GiB of memory, so I recommend anybody trying out to use that too.
-
 Make sure to utilize available cores by using `+RTS -N<number>`, such as `+RTS -N64`.
 
 ### Requirements:
