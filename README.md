@@ -1,8 +1,10 @@
 # SimpleRayTracerHS
 
-This is a ray tracer built in Haskell, for the Functional Programming competition at University of Edinburgh. It generates a sequence of PNG images (to be combined for GIF) of a ray-trached world. It supports shadows, although it is computationally expensive at an exponential cost. The script can utilize all the CPUs available through concurrent threading.
+This is a ray tracer built in Haskell, for the Functional Programming competition at University of Edinburgh. As it is my first attempt at a proper ray tracer, it is full of unoptimized calculations. However, the output looks pretty good.
 
-`RayTracer.hs` contains the core RayTracing functionality, `Vector.hs` contains the vector module, and `Main.hs` contains the world configuration, as well as the concurrency configuration.
+The script generates a sequence of PNG images (to be combined for GIF) of a ray-traced world. It supports shadows, although it is computationally expensive at an exponential cost. The script can utilize all the CPUs available through concurrent threading.
+
+`RayTracer.hs` contains the core RayTracing functionality, `Vector.hs` contains the vector module, and `Main.hs` contains the world configuration, as well as the code for concurrency.
 
 ## Running
 
@@ -12,9 +14,13 @@ ghc -O2 -fexcess-precision -optc-ffast-math -optc-O3 -threaded -rtsopts Main.hs
 ```
 The options enable faster floating point math, more optimization, multi-thread compatibility, and a profiler (which you can show by adding the `+RTS -s` flag to the executable).
 
-Due to the overhead of generating concurrent threads (I think), the script runs into an Internal Error (out of RAM) on most consumer-level hardware. It works on DICE (UoE computing servers), so I recommend anybody trying out to use that too.
+Due to the overhead of keeping track of concurrent threads (I think), the script runs out of memory on most consumer-level hardware. It works on DICE (UoE computing servers) using about 70GiB of memory, so I recommend anybody trying out to use that too.
 
 Make sure to utilize available cores by using `+RTS -N<number>`, such as `+RTS -N64`.
+
+### Requirements:
+- `Main` has to be executable (chmod +x Main).
+- There has to be a folder named `output`.
 
 ### Command-line arguments:
 
@@ -27,6 +33,12 @@ Make sure to utilize available cores by using `+RTS -N<number>`, such as `+RTS -
 --res 192:108   Specifies the output resolution. If unspecified uses 960:540.
 ```
 
+### Conversion to GIF/MP4
+
+Using `ffmpeg` this is as trivial as running:
+- `ffmpeg -i %03d.png output.gif` for GIF, or
+- `ffmpeg -i %03d.png -pix_fmt yuv420p output.mp4` for mp4.
+
 ## Libraries
 
 - JuicyPixels (for generating images)
@@ -34,13 +46,18 @@ Make sure to utilize available cores by using `+RTS -N<number>`, such as `+RTS -
 
 ## Generated Images:
 
-- 1920x1080, 1 frame, no shadows, laptop, multi-threaded, 5 minutes
-![Image](https://i.imgur.com/P71RrG3.png)
+- `./Main --frames 0 --res 1920:1080 +RTS -s` (~5 minutes on DICE)
+![Image](examples/without-shadow.png)
 
-- 960x540, 1 frame, shadows, DICE, multi-threaded, 173 minutes (single-threaded: 470 minutes)
+- `./Main --frames 0 --res 960:540 --shadow +RTS -s -N64` (~173 minutes on DICE)
 
-![Image](https://i.imgur.com/vNUisyL.png)
+![Image](examples/with-shadow.png)
 
-- 960x540, GIF, no shadows, laptop, single-threaded, 110 minutes
+- `./Main --res 960:540 +RTS -s` (~110 minutes)
+- `ffmpeg -i %03d.png output.gif`
 
-File too large to display here. 
+![Image](examples/without-shadow.gif)
+
+## Credits
+
+All textures are either hand-drawn (by me), free stock images (from Pixabay), or screenshots with faces blurred and names changed.
