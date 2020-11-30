@@ -1,6 +1,7 @@
 module RayTracer (Texture(..), getTexture, Object(..), Light(..), World, Screen(..), renderAtPixel)
 where
 
+import Control.Concurrent.Async
 import Vector
 import Codec.Picture
 import Debug.Trace
@@ -286,16 +287,19 @@ type Shadow = Bool
 -- create a ray and shoot it from the origin (0, 0, focal point)
 -- get all intersections to the ray, and the colour of the intersected object
 -- and convert to RGB
-renderAtPixel :: (Screen, World, Resolution, Shadow) -> Int -> Int -> PixelRGB8
-renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shadow) x' y' = listToRGB8 $ getColour
+renderAtPixel :: (Screen, World, Resolution, Shadow) -> Int -> Int -> IO PixelRGB8
+renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shadow) x' y' = do {
+    colour <- getColour;
+    return (listToRGB8 colour)
+  }
   where
     x = fromIntegral x'
     y = fromIntegral y'
 
-    getColour :: [Int]
+    getColour :: IO [Int]
     getColour 
       | iExist    = iColour
-      | otherwise = [0, 0, 0]
+      | otherwise = return [0, 0, 0]
     
     intersection :: Maybe Intersection
     intersection = findClosest [a | Just a <- [intersect (mkRay (pos >+< iRayO) iRayD) item | item <- objects]]
@@ -306,11 +310,18 @@ renderAtPixel s@((Screen (w, h, focal) pos), (objects, lights), (o_w, o_h), shad
     iExist :: Bool
     iExist = intersection /= Nothing 
 
-    iColour :: [Int]
-    iColour = map (round . sum) $ transpose [
-      if not shadow then (lightContribution iCoord iNormal iObject light) else map (max 0) $ zipWith (-) (lightContribution iCoord iNormal iObject light) (shadowContribution iCoord iNormal iObject light objects)
+    iColour :: IO [Int]
+    iColour = mapConcurrently roundSum $ transpose [
+      iColourFromLight light
       | light <- lights
       ]
+    roundSum :: [Double] -> IO Int
+    roundSum xs = return $ (round.sum) xs
+
+    iColourFromLight :: Light -> [Double]
+    iColourFromLight light
+      | not shadow = lightContribution iCoord iNormal iObject light
+      | otherwise  = map (max 0) $ zipWith (-) (lightContribution iCoord iNormal iObject light) (shadowContribution iCoord iNormal iObject light objects)
 
     iRayO :: Vector
     iRayO = Vector 0 0 (focal*(-1))
